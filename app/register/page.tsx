@@ -60,7 +60,7 @@ if (result.success) {
             </svg>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-            FarmPulse
+            FarmTrack
           </h1>
           <p className="mt-2 text-slate-400 text-sm">Create your account</p>
         </div>

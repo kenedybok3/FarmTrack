@@ -40,3 +40,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local
+
+# next.js
+/.next/
+/.next-local       <-- ADD THIS LINE
+/out/
+
+# env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

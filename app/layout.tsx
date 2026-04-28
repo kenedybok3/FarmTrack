@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FarmPulse - Poultry Farm Management",
+  title: "FarmTrack - Poultry Farm Management",
   description: "AI-powered poultry farm management for Nigerian farmers",
 };
 

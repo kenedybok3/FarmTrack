@@ -17,7 +17,7 @@ export default function BatchesPage() {
   const [showForm, setShowForm] = useState(false)
   const [newBatch, setNewBatch] = useState({
     batch_name: "",
-    animal_type: "Poultry",
+    animal_type: "Layers",
     initial_count: ""
   })
 
@@ -38,7 +38,7 @@ export default function BatchesPage() {
     })
     
     if (result.success) {
-      setNewBatch({ batch_name: "", animal_type: "Poultry", initial_count: "" })
+      setNewBatch({ batch_name: "", animal_type: "Layers", initial_count: "" })
       setShowForm(false)
     }
   }
@@ -60,7 +60,7 @@ export default function BatchesPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6 pt-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter text-green-500">FarmPulse</h1>
+          <h1 className="text-3xl font-extrabold tracking-tighter text-green-500">FarmTrack</h1>
           <p className="text-gray-500 text-xs font-medium uppercase">Batches</p>
         </div>
         <Button onClick={() => router.push("/dashboard")} variant="outline" size="sm">
@@ -89,10 +89,8 @@ export default function BatchesPage() {
               value={newBatch.animal_type}
               onChange={(e) => setNewBatch({ ...newBatch, animal_type: e.target.value })}
             >
-              <option value="Poultry">Poultry</option>
-              <option value="Goats">Goats</option>
-              <option value="Pigs">Pigs</option>
-              <option value="Cattle">Cattle</option>
+              <option value="Layers">Layers</option>
+              <option value="Broilers">Broilers</option>
             </select>
           </div>
           <Input

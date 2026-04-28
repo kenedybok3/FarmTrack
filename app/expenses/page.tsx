@@ -66,7 +66,7 @@ export default function ExpensesPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6 pt-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter text-green-500">FarmPulse</h1>
+          <h1 className="text-3xl font-extrabold tracking-tighter text-green-500">FarmTrack</h1>
           <p className="text-gray-500 text-xs font-medium uppercase">Expenses</p>
         </div>
         <Button onClick={() => router.push("/dashboard")} variant="outline" size="sm">

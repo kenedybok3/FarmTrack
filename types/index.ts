@@ -131,3 +131,10 @@ export interface AIAlertInput {
   message: string;
   severity?: AIAlert['severity'];
 }
+
+export interface WeeklyDataPoint {
+  date: string;
+  dayName: string;
+  eggs: number;
+  feed: number;
+}

@@ -2,12 +2,19 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFarmData } from "@/hooks/useFarmData";
+import dynamic from "next/dynamic";
 import { useAI } from "@/hooks/useAI";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { DailyLogForm } from "@/components/forms/DailyLogForm";
 import { AIAlerts } from "@/components/dashboard/AIAlerts";
 import { AIConsultant } from "@/components/dashboard/AIConsultant";
+import { prepareWeeklyData } from "@/components/dashboard/WeeklyPoultryChart";
 import type { DailyRecordInput } from "@/types";
+
+const WeeklyPoultryChart = dynamic(
+  () => import("@/components/dashboard/WeeklyPoultryChart").then((mod) => mod.WeeklyPoultryChart),
+  { ssr: false }
+);
 
 export default function Dashboard() {
   const { user, loading: authLoading, logout, getStoredFarmerId } = useAuth()
@@ -76,7 +83,8 @@ export default function Dashboard() {
     if (!question.trim()) return { success: false, error: 'Please enter a question' }
     
     setQuestionLoading(true)
-    const result = await getAIAdvice(question, records)
+    const weekly = prepareWeeklyData(records)
+    const result = await getAIAdvice(question, records, weekly)
     setQuestionLoading(false)
     
     return result
@@ -93,8 +101,18 @@ export default function Dashboard() {
     )
   }
 
-  if (!user) {
-    return null
+  if (!user && !farmerId) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return (
+      <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-pulse text-4xl mb-4">🔄</div>
+          <p className="text-gray-400">Redirecting...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -102,9 +120,9 @@ export default function Dashboard() {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6 pt-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter text-green-500">FarmPulse</h1>
+          <h1 className="text-3xl font-extrabold tracking-tighter text-green-500">FarmTrack</h1>
           <p className="text-gray-500 text-xs font-medium uppercase tracking-widest">
-            {user.farm_type || 'Poultry'} Vault
+            {user?.farm_type || 'Poultry'} Vault
           </p>
         </div>
         <button 
@@ -118,6 +136,9 @@ export default function Dashboard() {
       {/* STATS */}
       <StatsCards stats={stats} />
 
+      {/* WEEKLY CHART */}
+      <WeeklyPoultryChart records={records} />
+
       {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* LEFT COLUMN */}
@@ -125,7 +146,7 @@ export default function Dashboard() {
           {/* Welcome */}
           <div className="mb-2 px-1">
             <p className="text-gray-400 text-sm">
-              Welcome back, <span className="text-white font-bold">{user.full_name || user.name || 'Farmer'}</span>
+              Welcome back, <span className="text-white font-bold">{user?.full_name || user?.name || 'Farmer'}</span>
             </p>
           </div>
 

@@ -14,7 +14,7 @@ export default function Home() {
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center"
           style={{ 
-            backgroundImage: `url('https://images.unsplash.com/photo-1516467508483-a7212febe31a?q=80&w=2073&auto=format&fit=crop')`,
+            backgroundImage: `url('https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?q=80&w=2070&auto=format&fit=crop')`,
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
@@ -31,13 +31,13 @@ export default function Home() {
           </div>
           
           <h1 className="text-5xl font-extrabold text-white mb-6 drop-shadow-lg leading-tight">
-            Digital Farm <br/>
-            <span className="text-green-400">Assistant</span>
+            Poultry Farm <br/>
+            <span className="text-green-400">Manager</span>
           </h1>
           
           <p className="text-gray-200 text-xl mb-12 font-medium leading-relaxed">
             No more paper books. <br/> 
-            Manage your <span className="text-green-300 font-bold">🐔 Poultry</span>, <span className="text-green-300 font-bold">🐐 Goats</span>, and <span className="text-green-300 font-bold">🐖 Pigs</span> on your phone.
+            Track your <span className="text-green-300 font-bold">🐔 Layers</span> and <span className="text-green-300 font-bold">🐣 Broilers</span> on your phone.
           </p>
           
           <div className="space-y-6 mt-8">
