@@ -3,9 +3,15 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { getAlerts, createAlert, markAlertAsRead, markAllAlertsAsRead, getUnreadAlertCount } from '@/lib/api/alerts'
 import { getDailyRecords } from '@/lib/api/daily-records'
 import { getHealthLogs } from '@/lib/api/health-logs'
-import type { AIAlert, AIAlertInput, DailyRecord } from '@/types'
+import type { AIAlert, AIAlertInput, DailyRecord, WeeklyDataPoint } from '@/types'
 
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '')
+const genAI = new GoogleGenerativeAI(
+  process.env.NEXT_PUBLIC_GEMINI_API_KEY || ''
+)
+
+const model = genAI.getGenerativeModel({
+  model: 'models/gemini-1.5-flash-latest'
+})
 
 interface AIResponse {
   success: boolean
@@ -84,51 +90,62 @@ function analyzeTrends(records: DailyRecord[]): AIAlertInput[] {
   return alerts
 }
 
+function formatWeeklyData(weeklyData: WeeklyDataPoint[]): string {
+  if (weeklyData.length === 0) return 'No weekly data available.'
+  
+  return weeklyData.map(d => 
+    `${d.dayName} (${d.date}): ${d.eggs} eggs, ${d.feed}kg feed`
+  ).join('\n')
+}
+
 export function useAI(farmerId: string | null) {
   const [loading, setLoading] = useState(false)
   const [alertCount, setAlertCount] = useState(0)
   
-  const getAIAdvice = useCallback(async (question: string, records: DailyRecord[]): Promise<AIResponse> => {
-    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-      return { success: false, error: 'AI API key not configured' }
-    }
-    
-    setLoading(true)
-    
-    try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-      
-      const historyString = formatRecordsForAI(records)
-      
-      const prompt = `
-        SYSTEM: You are "FarmPulse AI," a specialist poultry veterinarian and financial consultant for Nigerian farmers. 
-        
-        FARM DATA HISTORY:
-        ${historyString}
-        
-        FARMER'S QUESTION: "${question}"
-        
-        INSTRUCTIONS: 
-        - Use the DATA HISTORY to detect trends
-        - If Mortality is increasing, be urgent and suggest quarantine or vet visit
-        - If Cash Flow is negative, suggest efficiency tips
-        - Keep answer under 100 words
-        - Use professional, expert yet encouraging tone
-        - If data is empty, provide general poultry startup advice
-        - Include specific Nigerian market prices when relevant
-      `
-      
-      const result = await model.generateContent(prompt)
-      const response = await result.response
-      
-      setLoading(false)
-      return { success: true, response: response.text() }
-    } catch (err: unknown) {
-      setLoading(false)
-      const message = err instanceof Error ? err.message : 'AI request failed'
-      return { success: false, error: message }
-    }
-  }, [])
+   const getAIAdvice = useCallback(async (question: string, records: DailyRecord[], weeklyData: WeeklyDataPoint[]): Promise<AIResponse> => {
+     if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+       return { success: false, error: 'AI API key not configured' }
+     }
+     
+     setLoading(true)
+     
+     try {
+       // Test connection
+       const test = await model.generateContent("Say 'AI connected successfully'");
+       console.log(test.response.text());
+       
+       const historyString = formatRecordsForAI(records)
+       const weeklyString = formatWeeklyData(weeklyData)
+       
+       const prompt = `
+         You are an expert Poultry Consultant. Analyze the following 7-day production data:
+         ${weeklyString}
+         
+         Look for trends in egg production, feed consumption, and mortality. If production is dropping or mortality is rising, provide a concise, 2-sentence diagnosis for a farmer in Nigeria.
+         
+         FARM DATA HISTORY:
+         ${historyString}
+         
+         FARMER'S QUESTION: "${question}"
+         
+         INSTRUCTIONS: 
+         - Keep answer under 100 words
+         - Use professional, expert yet encouraging tone
+         - If data is empty, provide general poultry startup advice
+         - Include specific Nigerian market prices when relevant
+       `
+       
+       const result = await model.generateContent(prompt)
+       const response = await result.response
+       
+       setLoading(false)
+       return { success: true, response: response.text() }
+     } catch (err: unknown) {
+       setLoading(false)
+       const message = err instanceof Error ? err.message : 'AI request failed'
+       return { success: false, error: message }
+     }
+   }, [])
   
   const generateProactiveAlerts = useCallback(async (farmerId: string): Promise<AIAlertInput[]> => {
     try {

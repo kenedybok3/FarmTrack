@@ -9,6 +9,51 @@ interface AuthState {
   error: string | null
 }
 
+function validateFarmerData(farmer: Farmer | null | undefined): farmer is Farmer {
+  return farmer !== null && farmer !== undefined && typeof farmer.id === 'string' && farmer.id.length > 0
+}
+
+async function completeLogin(email: string): Promise<Farmer | null> {
+  let farmer = await getFarmerByEmail(email)
+  console.log('completeLogin - Farmer by email:', farmer)
+
+  if (!farmer) {
+    farmer = await createFarmer({
+      email: email,
+      phone: '+2340000000000',
+      name: 'User',
+      farm_type: 'Poultry'
+    })
+    console.log('completeLogin - Created new farmer:', farmer)
+  }
+
+  if (!validateFarmerData(farmer)) {
+    console.error('completeLogin - Invalid farmer data:', farmer)
+    return null
+  }
+
+  localStorage.setItem('farmer_id', farmer.id)
+  return farmer
+}
+
+async function completeRegistration(email: string, name: string, phone: string, farmType: string): Promise<Farmer | null> {
+  const farmer = await createFarmer({
+    email: email,
+    phone: phone,
+    name,
+    full_name: name,
+    farm_type: farmType
+  })
+
+  if (!validateFarmerData(farmer)) {
+    console.error('completeRegistration - Invalid farmer data:', farmer)
+    return null
+  }
+
+  localStorage.setItem('farmer_id', farmer.id)
+  return farmer
+}
+
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -19,10 +64,10 @@ export function useAuth() {
   const checkSession = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       if (session?.user?.email) {
         let farmer = await getFarmerByEmail(session.user.email)
-        
+
         if (!farmer) {
           farmer = await createFarmer({
             email: session.user.email,
@@ -31,27 +76,34 @@ export function useAuth() {
             farm_type: 'Poultry'
           })
         }
-        
-        setState({ user: farmer, loading: false, error: null })
+
+        if (!validateFarmerData(farmer)) {
+          console.error('checkSession - Invalid farmer data:', farmer)
+          setState({ user: null, loading: false, error: null })
+          return
+        }
+
         localStorage.setItem('farmer_id', farmer.id)
+        setState({ user: farmer, loading: false, error: null })
         return
       }
-      
+
       const storedFarmerId = localStorage.getItem('farmer_id')
       if (storedFarmerId) {
         const farmer = await getFarmerById(storedFarmerId)
-        if (farmer) {
+        if (validateFarmerData(farmer)) {
           setState({ user: farmer, loading: false, error: null })
           return
         }
       }
-      
+
       setState({ user: null, loading: false, error: null })
-    } catch {
+    } catch (err) {
+      console.error('checkSession - Error:', err)
       const storedFarmerId = localStorage.getItem('farmer_id')
       if (storedFarmerId) {
         const farmer = await getFarmerById(storedFarmerId)
-        if (farmer) {
+        if (validateFarmerData(farmer)) {
           setState({ user: farmer, loading: false, error: null })
           return
         }
@@ -60,44 +112,29 @@ export function useAuth() {
     }
   }, [])
 
-  // useEffect(() => {
-  //   checkSession()
-
-  //   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-  //     if (event === 'SIGNED_IN') {
-  //       await checkSession()
-  //     } else if (event === 'SIGNED_OUT') {
-  //       setState({ user: null, loading: false, error: null })
-  //       localStorage.removeItem('farmer_id')
-  //     }
-  //   })
-
-  //   return () => subscription.unsubscribe()
-  // }, [checkSession])
-
   useEffect(() => {
-  checkSession()
+    checkSession()
 
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      if (event === "SIGNED_IN") {
-        await checkSession()
-      } 
-      else if (event === "SIGNED_OUT") {
-        localStorage.removeItem("farmer_id")
-        setState({ user: null, loading: false, error: null })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN") {
+          await checkSession()
+        }
+        else if (event === "SIGNED_OUT") {
+          localStorage.removeItem("farmer_id")
+          setState({ user: null, loading: false, error: null })
+        }
       }
-    }
-  )
+    )
 
-  return () => subscription.unsubscribe()
-}, [checkSession])
+    return () => subscription.unsubscribe()
+  }, [checkSession])
 
   const login = async (email: string, password: string) => {
     setState(prev => ({ ...prev, error: null, loading: true }))
-    
+
     try {
-      const { data, error } =    await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
@@ -109,52 +146,42 @@ export function useAuth() {
 
       console.log('Auth success, user:', data?.user)
 
-      let farmer = await getFarmerByEmail(email)
-      console.log('Farmer by email:', farmer)
-      
+      const farmer = await completeLogin(email)
       if (!farmer) {
-        farmer = await createFarmer({
-          email: email,
-          phone: '+2340000000000',
-          name: 'User',
-          farm_type: 'Poultry'
-        })
+        throw new Error('Failed to retrieve or create farmer record')
       }
-      
-      localStorage.setItem('farmer_id', farmer.id)
+
       setState({ user: farmer, loading: false, error: null })
       return { success: true }
     } catch (err: unknown) {
       console.error('Login error:', err)
       const message = err instanceof Error ? err.message : 'Login failed'
-      setState(prev => ({ 
-        ...prev, 
-        loading: false, 
-        error: message 
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: message
       }))
       return { success: false, error: message }
     }
   }
 
-const register = async (email: string, name: string, phone: string, password: string, farmType = 'Poultry') => {
+  const register = async (email: string, name: string, phone: string, password: string, farmType = 'Poultry') => {
     setState(prev => ({ ...prev, error: null, loading: true }))
-    
+
     try {
-      // Try to create new user first
       const { error: authError } = await supabase.auth.signUp({
         email,
         password
       })
 
-      // If user already exists, try signing in instead
       if (authError) {
-        if (authError.message?.includes('User already registered') || 
+        if (authError.message?.includes('User already registered') ||
             authError.code === 'user_already_exists') {
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
             password
           })
-          
+
           if (signInError) {
             throw new Error('Account exists. Please try logging in or reset your password.')
           }
@@ -164,23 +191,19 @@ const register = async (email: string, name: string, phone: string, password: st
         }
       }
 
-      const farmer = await createFarmer({
-        email: email,
-        phone: phone,
-        name,
-        full_name: name,
-        farm_type: farmType
-      })
+      const farmer = await completeRegistration(email, name, phone, farmType)
+      if (!farmer) {
+        throw new Error('Failed to create farmer record')
+      }
 
-      localStorage.setItem('farmer_id', farmer.id)
       setState({ user: farmer, loading: false, error: null })
       return { success: true }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Registration failed'
-      setState(prev => ({ 
-        ...prev, 
-        loading: false, 
-        error: message 
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: message
       }))
       return { success: false, error: message }
     }
