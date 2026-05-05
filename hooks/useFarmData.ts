@@ -18,6 +18,48 @@ interface FarmDataState {
   error: string | null
 }
 
+const DEMO_RECORDS: DailyRecord[] = [
+  { id: 'demo-1', farmer_id: 'demo-farmer-001', feed_bags_used: 5, feed_cost: 2500, mortality_count: 0, production_amt: 85, sales_amount: 17000, record_date: '2026-04-28', created_at: '2026-04-28T00:00:00Z' },
+  { id: 'demo-2', farmer_id: 'demo-farmer-001', feed_bags_used: 6, feed_cost: 3000, mortality_count: 1, production_amt: 92, sales_amount: 18400, record_date: '2026-04-29', created_at: '2026-04-29T00:00:00Z' },
+  { id: 'demo-3', farmer_id: 'demo-farmer-001', feed_bags_used: 5, feed_cost: 2500, mortality_count: 0, production_amt: 88, sales_amount: 17600, record_date: '2026-04-30', created_at: '2026-04-30T00:00:00Z' },
+  { id: 'demo-4', farmer_id: 'demo-farmer-001', feed_bags_used: 7, feed_cost: 3500, mortality_count: 2, production_amt: 78, sales_amount: 15600, record_date: '2026-05-01', created_at: '2026-05-01T00:00:00Z' },
+  { id: 'demo-5', farmer_id: 'demo-farmer-001', feed_bags_used: 6, feed_cost: 3000, mortality_count: 0, production_amt: 95, sales_amount: 19000, record_date: '2026-05-02', created_at: '2026-05-02T00:00:00Z' },
+  { id: 'demo-6', farmer_id: 'demo-farmer-001', feed_bags_used: 5, feed_cost: 2500, mortality_count: 1, production_amt: 82, sales_amount: 16400, record_date: '2026-05-03', created_at: '2026-05-03T00:00:00Z' },
+  { id: 'demo-7', farmer_id: 'demo-farmer-001', feed_bags_used: 6, feed_cost: 3000, mortality_count: 0, production_amt: 90, sales_amount: 18000, record_date: '2026-05-04', created_at: '2026-05-04T00:00:00Z' },
+]
+
+const DEMO_BATCHES: Batch[] = [
+  { id: 'demo-batch-1', farmer_id: 'demo-farmer-001', batch_name: 'Layer Batch A', animal_type: 'Layers', initial_count: 100, current_count: 95, acquired_date: '2026-01-15', created_at: '2026-01-15T00:00:00Z' },
+  { id: 'demo-batch-2', farmer_id: 'demo-farmer-001', batch_name: 'Broiler Batch B', animal_type: 'Broilers', initial_count: 50, current_count: 48, acquired_date: '2026-03-01', created_at: '2026-03-01T00:00:00Z' },
+]
+
+const DEMO_INVENTORY: Inventory[] = [
+  { id: 'demo-inv-1', farmer_id: 'demo-farmer-001', item_name: 'Layer Feed', quantity: 20, unit: 'bags', reorder_level: 10, created_at: '2026-01-15T00:00:00Z' },
+  { id: 'demo-inv-2', farmer_id: 'demo-farmer-001', item_name: 'Medicine', quantity: 5, unit: 'units', reorder_level: 3, created_at: '2026-02-01T00:00:00Z' },
+]
+
+const DEMO_STATS: FarmStats = {
+  totalSales: 121000,
+  totalMortality: 4,
+  avgProduction: 86.3,
+  totalFeedCost: 17500,
+}
+
+function getDemoData() {
+  if (typeof window !== 'undefined' && localStorage.getItem('demo_mode') === 'true') {
+    return {
+      records: DEMO_RECORDS,
+      batches: DEMO_BATCHES,
+      inventory: DEMO_INVENTORY,
+      stats: DEMO_STATS,
+      healthLogs: [],
+      expenses: [],
+      totalExpenses: 0,
+    }
+  }
+  return null
+}
+
 export function useFarmData(farmerId: string | null) {
   const [state, setState] = useState<FarmDataState>({
     records: [],
@@ -33,6 +75,22 @@ export function useFarmData(farmerId: string | null) {
 
   const refresh = useCallback(async () => {
     if (!farmerId) return
+    
+    const demoData = getDemoData()
+    if (demoData) {
+      setState({
+        records: demoData.records,
+        healthLogs: demoData.healthLogs,
+        expenses: demoData.expenses,
+        batches: demoData.batches,
+        inventory: demoData.inventory,
+        stats: demoData.stats,
+        totalExpenses: demoData.totalExpenses,
+        loading: false,
+        error: null
+      })
+      return
+    }
     
     setState(prev => ({ ...prev, loading: true, error: null }))
     
@@ -70,6 +128,22 @@ export function useFarmData(farmerId: string | null) {
 
   useEffect(() => {
     if (!farmerId) return
+    
+    const demoData = getDemoData()
+    if (demoData) {
+      setState({
+        records: demoData.records,
+        healthLogs: demoData.healthLogs,
+        expenses: demoData.expenses,
+        batches: demoData.batches,
+        inventory: demoData.inventory,
+        stats: demoData.stats,
+        totalExpenses: demoData.totalExpenses,
+        loading: false,
+        error: null
+      })
+      return
+    }
     
     let cancelled = false
     

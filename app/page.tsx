@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { DemoToggleButton } from "@/components/ui/DemoToggleButton";
 
 export default function Home() {
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
-  const animalCount = 0;
+  const [animalCount] = useState(0);
 
   if (animalCount === 0) {
     return (
@@ -25,12 +25,12 @@ export default function Home() {
         <div className="absolute bottom-32 right-8 w-32 h-32 bg-green-400/20 rounded-full blur-2xl" />
 
         {/* CONTENT */}
-        <div className="relative z-10 w-full max-w-lg">
+        <div className="relative z-10 w-full max-w-lg px-6">
           <div className="text-7xl mb-6 animate-bounce">
             🇳🇬
           </div>
           
-          <h1 className="text-5xl font-extrabold text-white mb-6 drop-shadow-lg leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-6 drop-shadow-lg leading-tight">
             Poultry Farm <br/>
             <span className="text-green-400">Manager</span>
           </h1>
@@ -40,63 +40,20 @@ export default function Home() {
             Track your <span className="text-green-300 font-bold">🐔 Layers</span> and <span className="text-green-300 font-bold">🐣 Broilers</span> on your phone.
           </p>
           
-          <div className="space-y-6 mt-8">
+          <div className="flex flex-col md:flex-row gap-4 mt-8 justify-center">
             <Link href="/register">
-              <button className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-5 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-green-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+              <button className="w-full md:w-auto bg-gradient-to-r from-green-500 to-green-600 text-white py-5 px-8 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-green-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
                 + Register My Farm
               </button>
             </Link>
             
-            <button 
-              onClick={() => setIsVideoOpen(true)}
-              className="w-full flex items-center justify-center gap-3 bg-white/10 backdrop-blur-md text-white py-4 rounded-2xl font-semibold border border-white/20 hover:bg-white/20 transition-all duration-200 group"
-            >
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <svg className="w-5 h-5 fill-white ml-1" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-              Watch Demo Video
-            </button>
+            <DemoToggleButton />
           </div>
 
           <p className="mt-16 text-sm text-gray-400 uppercase tracking-widest font-semibold">
             Built for Nigerian Farmers 🇳🇬
           </p>
         </div>
-
-        {/* VIDEO MODAL */}
-        {isVideoOpen && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            onClick={() => setIsVideoOpen(false)}
-          >
-            <div 
-              className="relative w-full max-w-3xl bg-black rounded-2xl overflow-hidden shadow-2xl"
-              onClick={e => e.stopPropagation()}
-            >
-              <button 
-                onClick={() => setIsVideoOpen(false)}
-                className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-              >
-                <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
-                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                </svg>
-              </button>
-              <div className="aspect-video flex items-center justify-center bg-gray-900">
-                <div className="text-center">
-                  <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-10 h-10 fill-green-400" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
-                  <p className="text-gray-400 text-lg">Demo Video Placeholder</p>
-                  <p className="text-gray-500 text-sm mt-2">Add your video URL in the code</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     );
   }

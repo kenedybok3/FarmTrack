@@ -13,6 +13,16 @@ function validateFarmerData(farmer: Farmer | null | undefined): farmer is Farmer
   return farmer !== null && farmer !== undefined && typeof farmer.id === 'string' && farmer.id.length > 0
 }
 
+const DEMO_FARMER: Farmer = {
+  id: "demo-farmer-001",
+  email: "demo@farmtrack.app",
+  phone: "+234000000000",
+  name: "Demo Farmer",
+  full_name: "Demo Farmer",
+  farm_type: "Poultry",
+  created_at: new Date().toISOString(),
+};
+
 async function completeLogin(email: string): Promise<Farmer | null> {
   let farmer = await getFarmerByEmail(email)
   console.log('completeLogin - Farmer by email:', farmer)
@@ -63,6 +73,14 @@ export function useAuth() {
 
   const checkSession = useCallback(async () => {
     try {
+      const isDemoMode = localStorage.getItem('demo_mode') === 'true'
+      const storedFarmerId = localStorage.getItem('farmer_id')
+      
+      if (isDemoMode && storedFarmerId === DEMO_FARMER.id) {
+        setState({ user: DEMO_FARMER, loading: false, error: null })
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user?.email) {
@@ -88,7 +106,6 @@ export function useAuth() {
         return
       }
 
-      const storedFarmerId = localStorage.getItem('farmer_id')
       if (storedFarmerId) {
         const farmer = await getFarmerById(storedFarmerId)
         if (validateFarmerData(farmer)) {
@@ -101,6 +118,13 @@ export function useAuth() {
     } catch (err) {
       console.error('checkSession - Error:', err)
       const storedFarmerId = localStorage.getItem('farmer_id')
+      const isDemoMode = localStorage.getItem('demo_mode') === 'true'
+      
+      if (isDemoMode && storedFarmerId === DEMO_FARMER.id) {
+        setState({ user: DEMO_FARMER, loading: false, error: null })
+        return
+      }
+      
       if (storedFarmerId) {
         const farmer = await getFarmerById(storedFarmerId)
         if (validateFarmerData(farmer)) {
@@ -213,9 +237,30 @@ export function useAuth() {
     try {
       await supabase.auth.signOut()
       localStorage.removeItem('farmer_id')
+      localStorage.removeItem('demo_mode')
       setState({ user: null, loading: false, error: null })
     } catch (err) {
       console.error('Logout error:', err)
+    }
+  }
+
+  const loginDemo = async () => {
+    setState(prev => ({ ...prev, error: null, loading: true }))
+    
+    try {
+      localStorage.setItem('farmer_id', DEMO_FARMER.id)
+      localStorage.setItem('demo_mode', 'true')
+      setState({ user: DEMO_FARMER, loading: false, error: null })
+      return { success: true }
+    } catch (err: unknown) {
+      console.error('Demo login error:', err)
+      const message = err instanceof Error ? err.message : 'Demo login failed'
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: message
+      }))
+      return { success: false, error: message }
     }
   }
 
@@ -231,6 +276,7 @@ export function useAuth() {
     login,
     register,
     logout,
+    loginDemo,
     getStoredFarmerId,
     checkSession
   }
