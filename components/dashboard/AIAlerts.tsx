@@ -16,8 +16,7 @@ export function AIAlerts({ farmerId, fetchAlerts, onMarkRead, onMarkAllRead }: A
   const [showAll, setShowAll] = useState(false)
 
   useEffect(() => {
-    if (!farmerId) return
-
+    // For demo mode, skip the Supabase fetch - fetchAlerts already returns mock data
     let cancelled = false
 
     const load = async () => {

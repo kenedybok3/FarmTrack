@@ -9,7 +9,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { user, loading, login } = useAuth();
   const router = useRouter();
@@ -35,28 +34,14 @@ export default function Login() {
       return;
     }
 
-    setIsSubmitting(true);
-
     const result = await login(email, password);
-    setIsSubmitting(false);
 
     if (result.success) {
-      setTimeout(() => {
-        router.replace("/dashboard");
-      }, 100);
+      router.replace("/dashboard");
     } else {
       setError(result.error || "Login failed");
     }
-  };
-
-  // Don’t show the UI while checking Firebase auth state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#030507]">
-        <div className="text-emerald-500 pulse-subtle">Loading...</div>
-      </div>
-    );
-  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -106,10 +91,10 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loading}
               className="btn-primary w-full py-4 rounded-xl text-white font-bold"
             >
-              {isSubmitting ? "Signing in..." : "Sign In"}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
         </div>

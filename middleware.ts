@@ -8,6 +8,9 @@ function handleAuthRedirects(
 ): NextResponse {
   const path = request.nextUrl.pathname
 
+  // Register page is a "Safe Zone" - no redirects ever
+  if (path === '/register') return response
+
   const isAuthPage = path === '/login' || path === '/register'
 
   const isProtectedPage =
@@ -28,12 +31,21 @@ function handleAuthRedirects(
 }
 
 export async function middleware(request: NextRequest) {
+  // Check for demo mode cookie first
+  const isDemo = request.cookies.get('demo_mode')?.value === 'true'
+
+  // If demo mode, allow access without Supabase check
+  if (isDemo) {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
+  // Otherwise, check Supabase auth as normal
   try {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -68,10 +80,4 @@ export async function middleware(request: NextRequest) {
     console.error('[Middleware] Unexpected error:', err)
     return handleAuthRedirects(request, response, null)
   }
-}
-
-export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
 }

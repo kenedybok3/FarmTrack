@@ -13,15 +13,8 @@ function validateFarmerData(farmer: Farmer | null | undefined): farmer is Farmer
   return farmer !== null && farmer !== undefined && typeof farmer.id === 'string' && farmer.id.length > 0
 }
 
-const DEMO_FARMER: Farmer = {
-  id: "demo-farmer-001",
-  email: "demo@farmtrack.app",
-  phone: "+234000000000",
-  name: "Demo Farmer",
-  full_name: "Demo Farmer",
-  farm_type: "Poultry",
-  created_at: new Date().toISOString(),
-};
+// Demo user uses "demo" as farmer_id (no fake Supabase UUID)
+// This is a pure local session, no database interaction
 
 async function completeLogin(email: string): Promise<Farmer | null> {
   let farmer = await getFarmerByEmail(email)
@@ -73,11 +66,15 @@ export function useAuth() {
 
   const checkSession = useCallback(async () => {
     try {
-      const isDemoMode = localStorage.getItem('demo_mode') === 'true'
-      const storedFarmerId = localStorage.getItem('farmer_id')
+      const isDemoMode = typeof window !== 'undefined' && document.cookie.includes('demo_mode=true')
+      const storedFarmerId = typeof window !== 'undefined' 
+        ? (document.cookie.match(new RegExp('(^| )farmer_id=([^;]+)')) || [])[2] || null
+        : null
       
-      if (isDemoMode && storedFarmerId === DEMO_FARMER.id) {
-        setState({ user: DEMO_FARMER, loading: false, error: null })
+      // If demo mode is active, set user to null (demo users don't have a Supabase user)
+      // The UI uses farmer_id="demo" to identify demo sessions
+      if (isDemoMode) {
+        setState({ user: null, loading: false, error: null })
         return
       }
 
@@ -117,11 +114,13 @@ export function useAuth() {
       setState({ user: null, loading: false, error: null })
     } catch (err) {
       console.error('checkSession - Error:', err)
-      const storedFarmerId = localStorage.getItem('farmer_id')
-      const isDemoMode = localStorage.getItem('demo_mode') === 'true'
+      const isDemoMode = typeof window !== 'undefined' && document.cookie.includes('demo_mode=true')
+      const storedFarmerId = typeof window !== 'undefined' 
+        ? (document.cookie.match(new RegExp('(^| )farmer_id=([^;]+)')) || [])[2] || null
+        : null
       
-      if (isDemoMode && storedFarmerId === DEMO_FARMER.id) {
-        setState({ user: DEMO_FARMER, loading: false, error: null })
+      if (isDemoMode) {
+        setState({ user: null, loading: false, error: null })
         return
       }
       
@@ -175,6 +174,10 @@ export function useAuth() {
         throw new Error('Failed to retrieve or create farmer record')
       }
 
+      // Clear demo cookies when user logs in
+      document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+      document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+
       setState({ user: farmer, loading: false, error: null })
       return { success: true }
     } catch (err: unknown) {
@@ -220,6 +223,10 @@ export function useAuth() {
         throw new Error('Failed to create farmer record')
       }
 
+      // Clear demo cookies when user registers
+      document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+      document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+
       setState({ user: farmer, loading: false, error: null })
       return { success: true }
     } catch (err: unknown) {
@@ -236,8 +243,19 @@ export function useAuth() {
   const logout = async () => {
     try {
       await supabase.auth.signOut()
-      localStorage.removeItem('farmer_id')
-      localStorage.removeItem('demo_mode')
+
+      // Clear our app cookies
+      document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+      document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+
+      // Clear all Supabase cookies (sb-*)
+      document.cookie.split(';').forEach(cookie => {
+        const [name] = cookie.trim().split('=')
+        if (name.startsWith('sb-')) {
+          document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;`
+        }
+      })
+
       setState({ user: null, loading: false, error: null })
     } catch (err) {
       console.error('Logout error:', err)
@@ -248,9 +266,9 @@ export function useAuth() {
     setState(prev => ({ ...prev, error: null, loading: true }))
     
     try {
-      localStorage.setItem('farmer_id', DEMO_FARMER.id)
-      localStorage.setItem('demo_mode', 'true')
-      setState({ user: DEMO_FARMER, loading: false, error: null })
+      document.cookie = "demo_mode=true; path=/;";
+      document.cookie = "farmer_id=demo; path=/;";
+      setState({ user: null, loading: false, error: null })
       return { success: true }
     } catch (err: unknown) {
       console.error('Demo login error:', err)
@@ -266,7 +284,8 @@ export function useAuth() {
 
   const getStoredFarmerId = () => {
     if (typeof window === 'undefined') return null
-    return localStorage.getItem('farmer_id')
+    const match = document.cookie.match(new RegExp('(^| )farmer_id=([^;]+)'))
+    return match ? match[2] : null
   }
 
   return {
