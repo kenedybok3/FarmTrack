@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -13,15 +12,12 @@ export default function Register() {
   const [error, setError] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   
-  const { user, loading, register } = useAuth()
+  const { loading, register } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     setIsVisible(true)
-    if (user) {
-      router.replace("/setup-profile")
-    }
-  }, [user, router])
+  }, [])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,26 +28,13 @@ export default function Register() {
       return
     }
 
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: "https://farm-track-taupe.vercel.app/login"
-      }
-    })
-    
-    if (authError) {
-      if (authError.message?.includes("User already registered") ||
-          authError.code === "user_already_exists") {
-        setError("Account already exists. Please try logging in.")
-      } else {
-        setError(authError.message || "Registration failed")
-      }
-      return
+    const result = await register(email, fullName, phone, password, "Poultry")
+
+    if (result.success) {
+      router.push("/setup-profile")
+    } else {
+      setError(result.error || "Registration failed")
     }
-    
-    alert("Registration successful! Please check your email to confirm your account.")
-    router.push("/login")
   }
 
   if (loading) {
