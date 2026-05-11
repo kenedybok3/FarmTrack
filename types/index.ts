@@ -5,6 +5,7 @@ export interface Farmer {
   name?: string;
   full_name?: string;
   farm_type?: string;
+  bird_types?: string[];
   created_at: string;
   updated_at?: string;
 }

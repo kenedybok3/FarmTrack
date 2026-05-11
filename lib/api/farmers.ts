@@ -1,10 +1,13 @@
 import { supabase } from '@/lib/supabase'
 import type { Farmer } from '@/types'
 
-export async function createFarmer(farmerData: { email?: string; phone?: string; name?: string; full_name?: string; farm_type?: string }) {
+export async function createFarmer(farmerData: { email?: string; phone?: string; name?: string; full_name?: string; bird_types?: string[] }) {
   const { data, error } = await supabase
     .from('farmers')
-    .insert([farmerData])
+    .insert([{
+      ...farmerData,
+      farm_type: 'Poultry',
+    }])
     .select()
     .single()
 

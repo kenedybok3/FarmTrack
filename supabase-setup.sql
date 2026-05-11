@@ -13,6 +13,7 @@ create table if not exists public.farmers (
   name text,
   full_name text,
   farm_type text,
+  bird_types text[],
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
@@ -227,8 +228,8 @@ create index if not exists idx_ai_alerts_farmer_id on public.ai_alerts(farmer_id
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.farmers (id, email, name, farm_type)
-  values (new.id, new.raw_user_meta_data->>'email', new.raw_user_meta_data->>'name', 'Poultry');
+  insert into public.farmers (id, email, name, farm_type, bird_types)
+  values (new.id, new.raw_user_meta_data->>'email', new.raw_user_meta_data->>'name', 'Poultry', ARRAY['Layers', 'Broilers']);
   return new;
 end;
 $$ language plpgsql security definer;
