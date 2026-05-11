@@ -1,83 +1,40 @@
+import { NextResponse, NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
 
-function handleAuthRedirects(
-  request: NextRequest,
-  response: NextResponse,
-  user: unknown
-): NextResponse {
-  const path = request.nextUrl.pathname
-
-  // Register page is a "Safe Zone" - no redirects ever
-  if (path === '/register') return response
-
-  const isAuthPage = path === '/login' || path === '/register'
-
-  const isProtectedPage =
-    path.startsWith('/dashboard') ||
-    path === '/setup-profile'
-
-  if (!user && isProtectedPage) {
-    console.log(`[Middleware] Redirecting unauthenticated user from ${path} to /login`)
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  if (user && isAuthPage) {
-    console.log(`[Middleware] Redirecting authenticated user from ${path} to /dashboard`)
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  return response
-}
-
-export async function middleware(request: NextRequest) {
-  // Check for demo mode cookie first
-  const isDemo = request.cookies.get('demo_mode')?.value === 'true'
-
-  // If demo mode, allow access without Supabase check
-  if (isDemo) {
-    return NextResponse.next()
-  }
-
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
-
-  // Otherwise, check Supabase auth as normal
-  try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              request.cookies.set(name, value)
-            })
-            response = NextResponse.next({
-              request,
-            })
-          },
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll()
         },
-      }
-    )
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options),
+          )
+        },
+      },
+    },
+  )
 
-    const { data: { user }, error } = await supabase.auth.getUser()
+  // ALLOW Supabase email verification + password recovery
+  const { searchParams, pathname } = new URL(req.url)
+  const type = searchParams.get('type')
 
-    if (error) {
-      console.error('[Middleware] Error getting user:', error.message)
-    } else {
-      console.log('[Middleware] User check completed:', user ? `Logged in as ${user.email}` : 'No user')
-    }
-
-    return handleAuthRedirects(request, response, user)
-  } catch (err) {
-    console.error('[Middleware] Unexpected error:', err)
-    return handleAuthRedirects(request, response, null)
+  if (type === 'signup' || type === 'recovery') {
+    // This MUST pass through so Supabase can finalize email confirmation
+    return res
   }
+
+  // Normal auth protection
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session && pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', req.url))
+  }
+
+  return res
 }

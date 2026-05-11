@@ -185,6 +185,9 @@ export function useAuth() {
       })
 
       if (error) {
+        if (error.message?.includes('rate limit') || error.message?.includes('Rate limit') || error.status === 429) {
+          throw new Error('Too many login attempts. Please wait a few minutes before trying again.')
+        }
         console.error('Auth signIn error:', error)
         throw error
       }
@@ -196,7 +199,7 @@ export function useAuth() {
       }
 
       let farmer = await getFarmerByUserId(user.id)
-      
+
       if (!farmer) {
         farmer = await getFarmerByEmailDirect(user.email || '')
       }
@@ -279,10 +282,17 @@ export function useAuth() {
           localStorage.setItem('farmer_id', farmer.id)
           setState({ user: farmer, loading: false, error: null })
           return { success: true, farmer }
-        } else {
-          console.error('Auth signup error:', authError)
-          throw authError
         }
+
+        // Handle email rate limit - suggest OTP alternative
+        if (authError.message?.includes('rate limit') ||
+            authError.message?.includes('Rate limit') ||
+            authError.status === 429) {
+          throw new Error('Too many sign-up attempts. Please wait a few minutes or try signing up with your phone number instead.')
+        }
+
+        console.error('Auth signup error:', authError)
+        throw authError
       }
 
       // Get the newly created user
@@ -297,7 +307,7 @@ export function useAuth() {
         email,
         user.user_metadata?.full_name || name
       )
-      
+
       if (!farmer) {
         throw new Error('Failed to create farmer record')
       }
@@ -311,6 +321,39 @@ export function useAuth() {
       return { success: true, farmer }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Registration failed'
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: message
+      }))
+      return { success: false, error: message }
+    }
+  }
+
+  const signUpWithOtp = async (phone: string) => {
+    setState(prev => ({ ...prev, error: null, loading: true }))
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        phone,
+        options: {
+          shouldCreateUser: true,
+        }
+      })
+
+      if (error) {
+        throw error
+      }
+
+      // User was created/sent OTP successfully
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: null
+      }))
+      return { success: true, message: 'OTP sent to your phone number' }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'OTP sign-up failed'
       setState(prev => ({
         ...prev,
         loading: false,
@@ -374,6 +417,7 @@ export function useAuth() {
     error: state.error,
     login,
     register,
+    signUpWithOtp,
     logout,
     loginDemo,
     getStoredFarmerId,

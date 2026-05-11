@@ -9,40 +9,63 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [otpPhone, setOtpPhone] = useState("");
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  
-  const { loading, register } = useAuth()
-  const router = useRouter()
+  const [useOtp, setUseOtp] = useState(false);
+
+  const { loading, register, signUpWithOtp } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    setIsVisible(true)
-  }, [])
+    setIsVisible(true);
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
 
     if (!email || !password || !fullName || !phone) {
-      setError("Please fill in all fields")
-      return
+      setError("Please fill in all fields");
+      return;
     }
 
-    const result = await register(email, fullName, phone, password, "Poultry")
+    const result = await register(email, fullName, phone, password, "Poultry");
 
     if (result.success) {
-      router.push("/setup-profile")
+      router.push("/setup-profile");
     } else {
-      setError(result.error || "Registration failed")
+      setError(result.error || "Registration failed");
     }
-  }
+  };
+
+  const handleOtpRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+
+    if (!otpPhone) {
+      setError("Please enter your phone number");
+      return;
+    }
+
+    const result = await signUpWithOtp(otpPhone);
+
+    if (result.success) {
+      setSuccessMsg(result.message || "OTP sent! Check your phone.");
+    } else {
+      setError(result.error || "OTP sign-up failed");
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#030507]">
         <div className="text-emerald-500 pulse-subtle">Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -66,65 +89,123 @@ export default function Register() {
               {error}
             </div>
           )}
-          
-          <form className="space-y-4" onSubmit={handleRegister}>
-            <div className="space-y-1">
-              <label className="text-xs text-slate-400 font-medium ml-1">Full Name</label>
-              <input 
-                type="text" 
-                placeholder="Enter your name" 
-                className="glass-input w-full p-4 rounded-xl text-white"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <label className="text-xs text-slate-400 font-medium ml-1">Email Address</label>
-              <input 
-                type="email" 
-                placeholder="you@example.com" 
-                className="glass-input w-full p-4 rounded-xl text-white"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-slate-400 font-medium ml-1">Phone Number</label>
-              <input 
-                type="tel" 
-                placeholder="+2348012345678" 
-                className="glass-input w-full p-4 rounded-xl text-white"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
+          {successMsg && (
+            <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-sm">
+              {successMsg}
             </div>
+          )}
 
-            <div className="space-y-1">
-              <label className="text-xs text-slate-400 font-medium ml-1">Password</label>
-              <input 
-                type="password" 
-                placeholder="Create a password" 
-                className="glass-input w-full p-4 rounded-xl text-white"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
+          {!useOtp ? (
+            <>
+              <form className="space-y-4" onSubmit={handleRegister}>
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-400 font-medium ml-1">Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your name"
+                    className="glass-input w-full p-4 rounded-xl text-white"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="btn-primary w-full py-4 rounded-xl text-white font-bold mt-2"
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
-          </form>
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-400 font-medium ml-1">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    className="glass-input w-full p-4 rounded-xl text-white"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-400 font-medium ml-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    placeholder="+2348012345678"
+                    className="glass-input w-full p-4 rounded-xl text-white"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-400 font-medium ml-1">Password</label>
+                  <input
+                    type="password"
+                    placeholder="Create a password"
+                    className="glass-input w-full p-4 rounded-xl text-white"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full py-4 rounded-xl text-white font-bold mt-2"
+                >
+                  {loading ? 'Creating account...' : 'Create Account'}
+                </button>
+              </form>
+
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => setUseOtp(true)}
+                  className="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors"
+                >
+                  Or sign up with phone OTP
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <form className="space-y-4" onSubmit={handleOtpRegister}>
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-400 font-medium ml-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    placeholder="+2348012345678"
+                    className="glass-input w-full p-4 rounded-xl text-white"
+                    value={otpPhone}
+                    onChange={(e) => setOtpPhone(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <p className="text-xs text-slate-500 text-center">
+                  You will receive an OTP code via SMS to verify your account.
+                </p>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full py-4 rounded-xl text-white font-bold mt-2"
+                >
+                  {loading ? 'Sending OTP...' : 'Send OTP'}
+                </button>
+              </form>
+
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => setUseOtp(false)}
+                  className="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors"
+                >
+                  Or sign up with email &amp; password
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="text-center">
