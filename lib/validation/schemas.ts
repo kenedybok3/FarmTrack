@@ -15,9 +15,9 @@ export const loginSchema = z.object({
 })
 
 export const registerSchema = z.object({
-  phone: phoneSchema,
-  password: passwordSchema,
-  fullName: z.string().min(2, 'Name must be at least 2 characters')
+  fullName: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: passwordSchema
 })
 
 export const dailyRecordSchema = z.object({

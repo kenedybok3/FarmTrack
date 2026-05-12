@@ -32,9 +32,14 @@ export async function middleware(req: NextRequest) {
   // Normal auth protection
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (!session && pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', req.url))
-  }
+   if (!session && pathname.startsWith('/dashboard')) {
+     // Allow demo mode to bypass auth
+     const demoMode = req.cookies.get('demo_mode')?.value === 'true'
+     if (demoMode) {
+       return res
+     }
+     return NextResponse.redirect(new URL('/login', req.url))
+   }
 
   return res
 }

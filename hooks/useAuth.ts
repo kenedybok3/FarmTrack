@@ -83,9 +83,18 @@ export function useAuth() {
         ? (document.cookie.match(new RegExp('(^| )farmer_id=([^;]+)')) || [])[2] || null
         : null
       
-      // If demo mode is active, set user to null (demo users don't have a Supabase user)
+      // If demo mode is active, set a mock user object
       if (isDemoMode) {
-        setState({ user: null, loading: false, error: null })
+        const demoUser: Farmer = {
+          id: 'demo',
+          email: 'demo@farmtrack.app',
+          full_name: 'Demo Farmer',
+          farm_type: 'Poultry',
+          bird_types: ['Layers'],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        setState({ user: demoUser, loading: false, error: null })
         return
       }
 
@@ -213,19 +222,19 @@ export function useAuth() {
     }
   }
 
-  const register = async (email: string, name: string, phone: string, password: string, farmType = 'Poultry') => {
-    setState(prev => ({ ...prev, error: null, loading: true }))
+   const register = async (email: string, name: string, password: string, farmType = 'Poultry') => {
+     setState(prev => ({ ...prev, error: null, loading: true }))
 
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name
-          }
-        }
-      })
+     try {
+       const { data: authData, error: authError } = await supabase.auth.signUp({
+         email,
+         password,
+         options: {
+           data: {
+             full_name: name
+           }
+         }
+       })
 
       if (authError) {
         if (authError.message?.includes('User already registered') ||
@@ -261,29 +270,33 @@ export function useAuth() {
           return { success: true, farmer }
         }
 
-        // Handle email rate limit - suggest OTP alternative
+        // Handle email rate limit
         if (authError.message?.includes('rate limit') ||
             authError.message?.includes('Rate limit') ||
             authError.status === 429) {
-          throw new Error('Too many sign-up attempts. Please wait a few minutes or try signing up with your phone number instead.')
+          throw new Error('Too many sign-up attempts. Please wait a few minutes before trying again.')
         }
 
         console.error('Auth signup error:', authError)
         throw authError
       }
 
-      // Get the newly created user
-      const user = authData?.user
-      if (!user?.id) {
-        throw new Error('Signup succeeded but no user ID returned. Email confirmation may be required.')
-      }
+       // Get the newly created user
+       const user = authData?.user
+       if (!user?.id) {
+         throw new Error('Signup succeeded but no user ID returned. Email confirmation may be required.')
+       }
 
-      // Self-healing registration: create farmer profile using upsert
-      const farmer = await upsertFarmerProfile(
-        user.id,
-        email,
-        user.user_metadata?.full_name || name
-      )
+       // Wait for database trigger to complete (if it exists)
+       // This prevents race condition where both trigger and frontend try to insert
+       await new Promise(resolve => setTimeout(resolve, 500))
+
+       // Self-healing registration: create farmer profile using upsert
+       const farmer = await upsertFarmerProfile(
+         user.id,
+         email,
+         user.user_metadata?.full_name || name
+       )
 
       if (!farmer) {
         throw new Error('Failed to create farmer record')
