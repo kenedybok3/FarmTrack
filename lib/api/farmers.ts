@@ -1,29 +1,21 @@
 import { supabase } from '@/lib/supabase'
 import type { Farmer } from '@/types'
 
-export async function createFarmer(farmerData: { email?: string; phone?: string; name?: string; full_name?: string; bird_types?: string[] }) {
+export async function createFarmer(farmerData: { id: string; email?: string; name?: string; full_name?: string; bird_types?: string[] }) {
   const { data, error } = await supabase
     .from('farmers')
-    .insert([{
-      ...farmerData,
+    .upsert([{
+      id: farmerData.id,
+      email: farmerData.email,
+      full_name: farmerData.full_name,
       farm_type: 'Poultry',
+      bird_types: farmerData.bird_types || ['Layers'] as any[],
     }])
     .select()
     .single()
 
   if (error) throw error
   return data as Farmer
-}
-
-export async function getFarmerByPhone(phone: string) {
-  const { data, error } = await supabase
-    .from('farmers')
-    .select('*')
-    .eq('phone', phone)
-    .single()
-
-  if (error && error.code !== 'PGRST116') throw error
-  return data as Farmer | null
 }
 
 export async function getFarmerByEmail(email: string) {

@@ -1,9 +1,8 @@
 export interface Farmer {
   id: string;
   email?: string;
-  phone?: string;
-  name?: string;
   full_name?: string;
+  name?: string;
   farm_type?: string;
   bird_types?: string[];
   created_at: string;

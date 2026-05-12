@@ -8,16 +8,18 @@ interface AuthState {
   error: string | null
 }
 
-function validateFarmerData(farmer: Farmer | null | undefined): farmer is Farmer {
-  return farmer !== null && farmer !== undefined && typeof farmer.id === 'string' && farmer.id.length > 0
-}
-
-// Self-healing farmer profile upsert - uses id as conflict key
-async function upsertFarmerProfile(id: string, email: string, name: string): Promise<Farmer | null> {
+// Self-healing farmer profile upsert - uses UUID id from auth.users directly
+async function upsertFarmerProfile(id: string, email: string, fullName: string): Promise<Farmer | null> {
   const { data, error } = await supabase
     .from('farmers')
     .upsert(
-      { id, email, name } as any,
+      {
+        id,
+        email,
+        full_name: fullName,
+        farm_type: 'Poultry',
+        bird_types: ['Layers'] as any[]
+      },
       { onConflict: 'id' }
     )
     .select()
@@ -30,7 +32,7 @@ async function upsertFarmerProfile(id: string, email: string, name: string): Pro
   return data as Farmer
 }
 
-// Get farmer profile directly by user ID (replaces getFarmerById)
+// Get farmer profile directly by user ID
 async function getFarmerByUserId(id: string): Promise<Farmer | null> {
   const { data, error } = await supabase
     .from('farmers')
@@ -40,21 +42,6 @@ async function getFarmerByUserId(id: string): Promise<Farmer | null> {
 
   if (error && error.code !== 'PGRST116') {
     console.error('getFarmerByUserId error:', error)
-    return null
-  }
-  return data as Farmer | null
-}
-
-// Get farmer profile directly by email (replaces getFarmerByEmail)
-async function getFarmerByEmailDirect(email: string): Promise<Farmer | null> {
-  const { data, error } = await supabase
-    .from('farmers')
-    .select('*')
-    .eq('email', email)
-    .single()
-
-  if (error && error.code !== 'PGRST116') {
-    console.error('getFarmerByEmailDirect error:', error)
     return null
   }
   return data as Farmer | null
@@ -109,7 +96,7 @@ export function useAuth() {
         // Try stored farmer ID as fallback
         if (storedFarmerId) {
           const farmer = await getFarmerByUserId(storedFarmerId)
-          if (validateFarmerData(farmer)) {
+          if (farmer?.id) {
             setState({ user: farmer, loading: false, error: null })
             return
           }
@@ -120,21 +107,16 @@ export function useAuth() {
 
       // Self-healing: check if farmer profile exists, create if missing
       let farmer = await getFarmerByUserId(user.id)
-      
-      if (!farmer) {
-        farmer = await getFarmerByEmailDirect(user.email)
-      }
 
       if (!farmer) {
-        // Self-healing: create the profile using upsert
         farmer = await upsertFarmerProfile(
           user.id,
-          user.email,
-          user.user_metadata?.full_name || user.email.split('@')[0]
+          user.email || '',
+          user.user_metadata?.full_name || user.email?.split('@')[0] || ''
         )
       }
 
-      if (!validateFarmerData(farmer)) {
+      if (!farmer?.id) {
         console.error('checkSession - Invalid farmer data:', farmer)
         setState({ user: null, loading: false, error: null })
         return
@@ -201,11 +183,6 @@ export function useAuth() {
       let farmer = await getFarmerByUserId(user.id)
 
       if (!farmer) {
-        farmer = await getFarmerByEmailDirect(user.email || '')
-      }
-
-      if (!farmer) {
-        // Self-healing: create profile using upsert
         farmer = await upsertFarmerProfile(
           user.id,
           user.email || '',
@@ -213,7 +190,7 @@ export function useAuth() {
         )
       }
 
-      if (!validateFarmerData(farmer)) {
+      if (!farmer?.id) {
         throw new Error('Failed to retrieve or create farmer record')
       }
 
