@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -30,8 +31,10 @@ export default function Register() {
     const result = await register(email, fullName, password, "Poultry");
 
     if (result.success) {
+      toast.success("Registration successful! Please log in.");
       router.push("/setup-profile");
     } else {
+      toast.error("Registration failed. Please try again.");
       setError(result.error || "Registration failed");
     }
   };

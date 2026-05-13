@@ -106,6 +106,7 @@ export function useAuth() {
         if (storedFarmerId) {
           const farmer = await getFarmerByUserId(storedFarmerId)
           if (farmer?.id) {
+            localStorage.setItem('farmer_id', farmer.id)
             setState({ user: farmer, loading: false, error: null })
             return
           }
@@ -153,7 +154,7 @@ export function useAuth() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
           await checkSession()
         }
         else if (event === "SIGNED_OUT") {

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -37,8 +38,10 @@ export default function Login() {
     const result = await login(email, password);
 
     if (result.success) {
+      toast.success("Welcome back!");
       router.replace("/dashboard");
     } else {
+      toast.error("Invalid credentials.");
       setError(result.error || "Login failed");
     }
   };

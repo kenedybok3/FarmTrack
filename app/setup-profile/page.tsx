@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function SetupProfile() {
   const [fullName, setFullName] = useState("");
@@ -28,14 +29,14 @@ export default function SetupProfile() {
 
     const farmerId = localStorage.getItem('farmer_id');
     if (!farmerId) {
-      alert("Session expired. Please register again.");
+      toast.error("Session expired. Please register again.");
       router.push('/register');
       setLoading(false);
       return;
     }
 
     if (birdTypes.length === 0) {
-      alert("Please select at least one bird type.");
+      toast.error("Please select at least one bird type.");
       setLoading(false);
       return;
     }
@@ -50,9 +51,11 @@ export default function SetupProfile() {
       .eq('id', farmerId);
 
     if (error) {
-      alert("Error: " + error.message);
+      toast.error("Error: " + error.message);
     } else {
-      alert(`Welcome to the community, ${fullName}!`);
+      toast.success(`Welcome to the community, ${fullName}!`, {
+        description: 'Your farm profile has been created successfully.'
+      });
       router.push("/dashboard");
     }
     setLoading(false);
