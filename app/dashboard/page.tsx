@@ -2,12 +2,14 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFarmData } from "@/hooks/useFarmData";
+import { getFarmerById } from "@/lib/api/farmers";
 import dynamic from "next/dynamic";
 import { useAI } from "@/hooks/useAI";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { DailyLogForm } from "@/components/forms/DailyLogForm";
 import { AIAlerts } from "@/components/dashboard/AIAlerts";
 import { AIConsultant } from "@/components/dashboard/AIConsultant";
+import { PaystackUpgrade } from "@/components/PaystackUpgrade";
 import { prepareWeeklyData } from "@/components/dashboard/WeeklyPoultryChart";
 import type { DailyRecordInput } from "@/types";
 
@@ -23,30 +25,6 @@ export default function Dashboard() {
   const [farmerLoading, setFarmerLoading] = useState(false)
   const [vaccineName, setVaccineName] = useState("")
   const [questionLoading, setQuestionLoading] = useState(false)
-  const [vaccineName, setVaccineName] = useState("")
-  const [questionLoading, setQuestionLoading] = useState(false)
-  
-  const { 
-    records, 
-    stats, 
-    loading: dataLoading, 
-    addRecord, 
-    addHealthLog,
-    refresh 
-  } = useFarmData(farmerId)
-  
-  const {
-    getAIAdvice,
-    fetchAlerts,
-    markAsRead,
-    markAllRead,
-    checkAndGenerateAlerts
-  } = useAI(farmerId)
-  
-const [vaccineName, setVaccineName] = useState("")
-const [questionLoading, setQuestionLoading] = useState(false)
-const [farmerData, setFarmerData] = useState(null)
-const [farmerLoading, setFarmerLoading] = useState(false)
 
   // useEffect(() => {
   //   if (!authLoading && !user) {
