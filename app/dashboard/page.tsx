@@ -32,8 +32,7 @@ export default function Dashboard() {
     loading: dataLoading, 
     addRecord, 
     addHealthLog,
-    refresh,
-    checkAndGenerateAlerts
+    refresh
   } = useFarmData(farmerId)
 
   const {
@@ -52,9 +51,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (farmerId) {
-      checkAndGenerateAlerts()
+      aiCheckAlerts()
     }
-  }, [farmerId, checkAndGenerateAlerts])
+  }, [farmerId, aiCheckAlerts])
 
   // Fetch farmer data to check premium status
   useEffect(() => {
@@ -221,8 +220,8 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <PaystackUpgrade 
-                    email={user?.email || ''} 
-                    userId={farmerId} 
+                    email={user?.email || ""} 
+                    userId={user?.id || ""} 
                   />
                 </section>
               )
@@ -232,20 +231,6 @@ export default function Dashboard() {
                 <p className="text-gray-400">Loading farmer profile...</p>
               </section>
             )}
-              ) : (
-                <div className="py-8 px-4 text-center border-2 border-dashed border-gray-800 rounded-3xl">
-                  <div className="text-3xl mb-3">🚀</div>
-                  <h3 className="text-white font-bold text-sm mb-1">Your Vault is Empty</h3>
-                  <p className="text-gray-500 text-[11px] leading-relaxed mb-4">
-                    Start by logging your feed and harvest to see your first farm insights.
-                  </p>
-                  <div className="inline-block bg-green-500/10 text-green-500 text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-green-500/20">
-                    Ready for entry #1
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
 
           {/* Health Logs */}
           <section className="bg-gray-900/10 p-6 rounded-3xl border border-dashed border-gray-800">
