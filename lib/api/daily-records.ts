@@ -1,16 +1,17 @@
 import { supabase } from '@/lib/supabase'
 import type { DailyRecord, DailyRecordInput, FarmStats } from '@/types'
 
-export async function createDailyRecord(record: DailyRecordInput) {
-  const { data, error } = await supabase
-    .from('daily_records')
-    .insert([record])
-    .select()
-    .single()
+export async function createDailyRecord(record: DailyRecordInput, signal?: AbortSignal) {
+   const { data, error } = await supabase
+     .from('daily_records')
+     .insert([record])
+     .select()
+     .single()
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-  return data as DailyRecord
-}
+   if (error) throw error
+   return data as DailyRecord
+ }
 
 export async function getDailyRecords(farmerId: string, limit = 30) {
   const { data, error } = await supabase
@@ -49,14 +50,15 @@ export async function updateDailyRecord(id: string, updates: Partial<DailyRecord
   return data as DailyRecord
 }
 
-export async function deleteDailyRecord(id: string) {
-  const { error } = await supabase
-    .from('daily_records')
-    .delete()
-    .eq('id', id)
+export async function deleteDailyRecord(id: string, signal?: AbortSignal) {
+   const { error } = await supabase
+     .from('daily_records')
+     .delete()
+     .eq('id', id)
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-}
+   if (error) throw error
+ }
 
 export async function getFarmStats(farmerId: string): Promise<FarmStats> {
   const records = await getDailyRecords(farmerId, 100)

@@ -5,6 +5,7 @@ import { getExpenses, createExpense, deleteExpense, getTotalExpenses } from '@/l
 import { getBatches, createBatch, updateBatchCount, deleteBatch } from '@/lib/api/batches'
 import { getInventory, createInventoryItem, updateInventoryQuantity, deleteInventoryItem } from '@/lib/api/inventory'
 import type { DailyRecord, DailyRecordInput, HealthLog, Expense, Batch, Inventory, FarmStats } from '@/types'
+import { toast } from 'sonner'
 
 interface FarmDataState {
   records: DailyRecord[]
@@ -61,7 +62,7 @@ function getDemoData() {
 }
 
 export function useFarmData(farmerId: string | null) {
-  const [state, setState] = useState<FarmDataState>({
+   const [state, setState] = useState<FarmDataState>({
     records: [],
     healthLogs: [],
     expenses: [],
@@ -193,147 +194,408 @@ export function useFarmData(farmerId: string | null) {
     }
   }, [farmerId])
 
-  const addRecord = async (record: Omit<DailyRecordInput, 'farmer_id'>) => {
-    if (!farmerId) return { success: false, error: 'No farmer ID' }
-    
-    try {
-      await createDailyRecord({ ...record, farmer_id: farmerId })
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+const addRecord = async (record: Omit<DailyRecordInput, 'farmer_id'>) => {
+     if (!farmerId) return { success: false, error: 'No farmer ID' }
 
-  const removeRecord = async (id: string) => {
-    try {
-      await deleteDailyRecord(id)
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
 
-  const addHealthLog = async (log: Omit<HealthLog, 'id' | 'created_at' | 'farmer_id'>) => {
-    if (!farmerId) return { success: false, error: 'No farmer ID' }
-    
-    try {
-      await createHealthLog({ ...log, farmer_id: farmerId })
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+     setState(prev => ({ ...prev, loading: true, error: null }))
 
-  const removeHealthLog = async (id: string) => {
-    try {
-      await deleteHealthLog(id)
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+     try {
+       const sanitized = {
+         ...record,
+         feed_bags_used: Number(record.feed_bags_used),
+         feed_cost: Number(record.feed_cost),
+         mortality_count: Number(record.mortality_count),
+         production_amt: Number(record.production_amt),
+         sales_amount: Number(record.sales_amount),
+       }
 
-  const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'farmer_id'>) => {
-    if (!farmerId) return { success: false, error: 'No farmer ID' }
-    
-    try {
-      await createExpense({ ...expense, farmer_id: farmerId })
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+       await createDailyRecord({ ...sanitized, farmer_id: farmerId }, controller.signal)
+       await refresh()
+       toast.success('Record saved successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection and try again.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to save record'
 
-  const removeExpense = async (id: string) => {
-    try {
-      await deleteExpense(id)
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
 
-  const addBatch = async (batch: Omit<Batch, 'id' | 'created_at' | 'farmer_id' | 'current_count'>) => {
-    if (!farmerId) return { success: false, error: 'No farmer ID' }
-    
-    try {
-      await createBatch({ ...batch, farmer_id: farmerId })
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
 
-  const updateBatch = async (id: string, newCount: number) => {
-    try {
-      await updateBatchCount(id, newCount)
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+const removeRecord = async (id: string) => {
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
 
-  const removeBatch = async (id: string) => {
-    try {
-      await deleteBatch(id)
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+     setState(prev => ({ ...prev, loading: true, error: null }))
 
-  const addInventoryItem = async (item: Omit<Inventory, 'id' | 'created_at' | 'farmer_id'>) => {
-    if (!farmerId) return { success: false, error: 'No farmer ID' }
-    
-    try {
-      await createInventoryItem({ ...item, farmer_id: farmerId })
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+     try {
+       await deleteDailyRecord(id, controller.signal)
+       await refresh()
+       toast.success('Record deleted successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to delete record'
 
-  const updateInventory = async (id: string, quantity: number) => {
-    try {
-      await updateInventoryQuantity(id, quantity)
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
 
-  const removeInventoryItem = async (id: string) => {
-    try {
-      await deleteInventoryItem(id)
-      await refresh()
-      return { success: true }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save record'
-      return { success: false, error: message }
-    }
-  }
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const addHealthLog = async (log: Omit<HealthLog, 'id' | 'created_at' | 'farmer_id'>) => {
+     if (!farmerId) return { success: false, error: 'No farmer ID' }
+
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await createHealthLog({ ...log, farmer_id: farmerId }, controller.signal)
+       await refresh()
+       toast.success('Health log saved successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to save health log'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const removeHealthLog = async (id: string) => {
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await deleteHealthLog(id, controller.signal)
+       await refresh()
+       toast.success('Health log deleted successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to delete health log'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'farmer_id'>) => {
+     if (!farmerId) return { success: false, error: 'No farmer ID' }
+
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await createExpense({ ...expense, farmer_id: farmerId }, controller.signal)
+       await refresh()
+       toast.success('Expense saved successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to save expense'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const removeExpense = async (id: string) => {
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await deleteExpense(id, controller.signal)
+       await refresh()
+       toast.success('Expense deleted successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to delete expense'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const addBatch = async (batch: Omit<Batch, 'id' | 'created_at' | 'farmer_id' | 'current_count'>) => {
+     if (!farmerId) return { success: false, error: 'No farmer ID' }
+
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await createBatch({ ...batch, farmer_id: farmerId }, controller.signal)
+       await refresh()
+       toast.success('Batch added successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to add batch'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const updateBatch = async (id: string, newCount: number) => {
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await updateBatchCount(id, newCount, controller.signal)
+       await refresh()
+       toast.success('Batch updated successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to update batch'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const removeBatch = async (id: string) => {
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await deleteBatch(id, controller.signal)
+       await refresh()
+       toast.success('Batch deleted successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to delete batch'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const addInventoryItem = async (item: Omit<Inventory, 'id' | 'created_at' | 'farmer_id'>) => {
+     if (!farmerId) return { success: false, error: 'No farmer ID' }
+
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await createInventoryItem({ ...item, farmer_id: farmerId }, controller.signal)
+       await refresh()
+       toast.success('Inventory item added successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to add inventory item'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const updateInventory = async (id: string, quantity: number) => {
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await updateInventoryQuantity(id, quantity, controller.signal)
+       await refresh()
+       toast.success('Inventory updated successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to update inventory'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
+
+const removeInventoryItem = async (id: string) => {
+     const controller = new AbortController()
+     const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+     setState(prev => ({ ...prev, loading: true, error: null }))
+
+     try {
+       await deleteInventoryItem(id, controller.signal)
+       await refresh()
+       toast.success('Inventory item deleted successfully!')
+       return { success: true }
+     } catch (err: unknown) {
+       const isTimeout = err instanceof DOMException && err.name === 'AbortError'
+       const message = isTimeout
+         ? 'Request timed out. Please check your connection.'
+         : err instanceof Error
+           ? err.message
+           : 'Failed to delete inventory item'
+
+       if (isTimeout) {
+         toast.error('Timeout: Server did not respond in time.')
+       } else {
+         toast.error('Error: ' + message)
+       }
+
+       return { success: false, error: message }
+     } finally {
+       clearTimeout(timeoutId)
+       setState(prev => ({ ...prev, loading: false }))
+     }
+   }
 
   return {
     ...state,

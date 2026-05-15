@@ -1,16 +1,17 @@
 import { supabase } from '@/lib/supabase'
 import type { Batch, BatchInput } from '@/types'
 
-export async function createBatch(batch: BatchInput) {
-  const { data, error } = await supabase
-    .from('batches')
-    .insert([{ ...batch, current_count: batch.initial_count }])
-    .select()
-    .single()
+export async function createBatch(batch: BatchInput, signal?: AbortSignal) {
+   const { data, error } = await supabase
+     .from('batches')
+     .insert([{ ...batch, current_count: batch.initial_count }])
+     .select()
+     .single()
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-  return data as Batch
-}
+   if (error) throw error
+   return data as Batch
+ }
 
 export async function getBatches(farmerId: string) {
   const { data, error } = await supabase
@@ -34,27 +35,29 @@ export async function getBatchById(id: string) {
   return data as Batch
 }
 
-export async function updateBatch(id: string, updates: Partial<Batch>) {
-  const { data, error } = await supabase
-    .from('batches')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single()
+export async function updateBatch(id: string, updates: Partial<Batch>, signal?: AbortSignal) {
+   const { data, error } = await supabase
+     .from('batches')
+     .update(updates)
+     .eq('id', id)
+     .select()
+     .single()
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-  return data as Batch
-}
+   if (error) throw error
+   return data as Batch
+ }
 
-export async function deleteBatch(id: string) {
-  const { error } = await supabase
-    .from('batches')
-    .delete()
-    .eq('id', id)
+export async function deleteBatch(id: string, signal?: AbortSignal) {
+   const { error } = await supabase
+     .from('batches')
+     .delete()
+     .eq('id', id)
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-}
+   if (error) throw error
+ }
 
-export async function updateBatchCount(id: string, newCount: number) {
-  return updateBatch(id, { current_count: newCount })
-}
+export async function updateBatchCount(id: string, newCount: number, signal?: AbortSignal) {
+   return updateBatch(id, { current_count: newCount }, signal)
+ }

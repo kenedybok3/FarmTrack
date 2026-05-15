@@ -1,16 +1,17 @@
 import { supabase } from '@/lib/supabase'
 import type { Expense, ExpenseInput } from '@/types'
 
-export async function createExpense(expense: ExpenseInput) {
-  const { data, error } = await supabase
-    .from('expenses')
-    .insert([expense])
-    .select()
-    .single()
+export async function createExpense(expense: ExpenseInput, signal?: AbortSignal) {
+   const { data, error } = await supabase
+     .from('expenses')
+     .insert([expense])
+     .select()
+     .single()
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-  return data as Expense
-}
+   if (error) throw error
+   return data as Expense
+ }
 
 export async function getExpenses(farmerId: string, limit = 50) {
   const { data, error } = await supabase
@@ -36,14 +37,15 @@ export async function updateExpense(id: string, updates: Partial<ExpenseInput>) 
   return data as Expense
 }
 
-export async function deleteExpense(id: string) {
-  const { error } = await supabase
-    .from('expenses')
-    .delete()
-    .eq('id', id)
+export async function deleteExpense(id: string, signal?: AbortSignal) {
+   const { error } = await supabase
+     .from('expenses')
+     .delete()
+     .eq('id', id)
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-}
+   if (error) throw error
+ }
 
 export async function getExpensesByCategory(farmerId: string) {
   const { data, error } = await supabase

@@ -1,16 +1,17 @@
 import { supabase } from '@/lib/supabase'
 import type { HealthLog, HealthLogInput } from '@/types'
 
-export async function createHealthLog(log: HealthLogInput) {
-  const { data, error } = await supabase
-    .from('health_logs')
-    .insert([log])
-    .select()
-    .single()
+export async function createHealthLog(log: HealthLogInput, signal?: AbortSignal) {
+   const { data, error } = await supabase
+     .from('health_logs')
+     .insert([log])
+     .select()
+     .single()
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-  return data as HealthLog
-}
+   if (error) throw error
+   return data as HealthLog
+ }
 
 export async function getHealthLogs(farmerId: string, limit = 50) {
   const { data, error } = await supabase
@@ -36,11 +37,12 @@ export async function updateHealthLog(id: string, updates: Partial<HealthLogInpu
   return data as HealthLog
 }
 
-export async function deleteHealthLog(id: string) {
-  const { error } = await supabase
-    .from('health_logs')
-    .delete()
-    .eq('id', id)
+export async function deleteHealthLog(id: string, signal?: AbortSignal) {
+   const { error } = await supabase
+     .from('health_logs')
+     .delete()
+     .eq('id', id)
+     .abortSignal(signal ?? new AbortController().signal)
 
-  if (error) throw error
-}
+   if (error) throw error
+ }

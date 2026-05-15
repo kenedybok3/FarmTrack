@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 import type { DailyRecordInput } from '@/types'
@@ -17,24 +18,23 @@ export function DailyLogForm({ onSubmit, loading = false }: DailyLogFormProps) {
   const [production, setProduction] = useState('')
   const [sales, setSales] = useState('')
   const [notes, setNotes] = useState('')
-  const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    e.stopPropagation()
 
     const record = {
-      feed_bags_used: feedBags ? parseFloat(feedBags) : 0,
-      feed_cost: feedCost ? parseFloat(feedCost) : 0,
-      mortality_count: mortality ? parseInt(mortality) : 0,
-      production_amt: production ? parseFloat(production) : 0,
-      sales_amount: sales ? parseFloat(sales) : 0,
+      feed_bags_used: Number(feedBags) || 0,
+      feed_cost: Number(feedCost) || 0,
+      mortality_count: Number(mortality) || 0,
+      production_amt: Number(production) || 0,
+      sales_amount: Number(sales) || 0,
       notes: notes || undefined,
       record_date: new Date().toISOString().split('T')[0]
     }
 
     const result = await onSubmit(record as any)
-    
+
     if (result.success) {
       setFeedBags('')
       setFeedCost('')
@@ -42,20 +42,15 @@ export function DailyLogForm({ onSubmit, loading = false }: DailyLogFormProps) {
       setProduction('')
       setSales('')
       setNotes('')
+      toast.success('Daily record saved successfully!')
     } else {
-      setError(result.error || 'Failed to save record')
+      toast.error(result.error || 'Failed to save record')
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-4">
+return (
+     <form onSubmit={handleSubmit} className="space-y-4">
+       <div className="grid grid-cols-2 gap-4">
         <Input
           type="number"
           step="0.1"
