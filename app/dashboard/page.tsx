@@ -19,6 +19,12 @@ const WeeklyPoultryChart = dynamic(
 export default function Dashboard() {
   const { user, loading: authLoading, logout, getStoredFarmerId } = useAuth()
   const farmerId = user?.id || getStoredFarmerId()
+  const [farmerData, setFarmerData] = useState(null)
+  const [farmerLoading, setFarmerLoading] = useState(false)
+  const [vaccineName, setVaccineName] = useState("")
+  const [questionLoading, setQuestionLoading] = useState(false)
+  const [vaccineName, setVaccineName] = useState("")
+  const [questionLoading, setQuestionLoading] = useState(false)
   
   const { 
     records, 
@@ -37,8 +43,10 @@ export default function Dashboard() {
     checkAndGenerateAlerts
   } = useAI(farmerId)
   
-  const [vaccineName, setVaccineName] = useState("")
-  const [questionLoading, setQuestionLoading] = useState(false)
+const [vaccineName, setVaccineName] = useState("")
+const [questionLoading, setQuestionLoading] = useState(false)
+const [farmerData, setFarmerData] = useState(null)
+const [farmerLoading, setFarmerLoading] = useState(false)
 
   // useEffect(() => {
   //   if (!authLoading && !user) {
@@ -51,6 +59,23 @@ export default function Dashboard() {
       checkAndGenerateAlerts()
     }
   }, [farmerId, checkAndGenerateAlerts])
+
+  // Fetch farmer data to check premium status
+  useEffect(() => {
+    if (farmerId) {
+      setFarmerLoading(true)
+      getFarmerById(farmerId)
+        .then((data) => {
+          setFarmerData(data)
+        })
+        .catch((err) => {
+          console.error("Failed to fetch farmer data:", err)
+        })
+        .finally(() => {
+          setFarmerLoading(false)
+        })
+    }
+  }, [farmerId])
 
   const handleLogout = async () => {
     await logout()
@@ -167,38 +192,50 @@ export default function Dashboard() {
             />
           </section>
 
-          {/* AI Consultant */}
-          <AIConsultant 
-            onAsk={handleAskAI} 
-            loading={questionLoading} 
-          />
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div className="space-y-8">
-          {/* Recent Activity */}
-          <section className="bg-gray-900/20 p-6 rounded-3xl border border-gray-800">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Recent Activity</h2>
-              <button onClick={refresh} className="text-[10px] text-green-500 font-bold uppercase">Refresh</button>
-            </div>
-
-            <div className="space-y-4">
-              {records.length > 0 ? (
-                records.slice(0, 5).map((item) => (
-                  <div key={item.id} className="bg-black/40 p-4 rounded-2xl border border-gray-800 flex justify-between items-center">
-                    <div>
-                      <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">
-                        {new Date(item.record_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
-                      </p>
-                      <div className="flex gap-3 items-center">
-                        <span className="text-xs">🥚 {item.production_amt}</span>
-                        <span className="text-xs text-red-400">💀 {item.mortality_count}</span>
-                      </div>
+            {/* AI Consultant */}
+            {!farmerLoading && farmerData ? (
+              farmerData.is_premium ? (
+                <AIConsultant 
+                  onAsk={handleAskAI} 
+                  loading={questionLoading} 
+                />
+              ) : (
+                <section className="bg-gray-900/10 p-6 rounded-3xl border border-dashed border-gray-800">
+                  <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">AI Consultant (Pro Feature)</h2>
+                  <p className="text-gray-400 mb-4">
+                    Unlock AI-powered farming advice with our Premium plan. Get personalized recommendations, 
+                    predictive analytics, and expert insights to maximize your farm's productivity.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
+                      <span className="text-xs">🎯</span>
+                      <span className="text-xs">Personalized feeding schedules</span>
                     </div>
-                    <p className="text-sm font-bold text-green-500">₦{item.sales_amount?.toLocaleString()}</p>
+                    <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
+                      <span className="text-xs">📊</span>
+                      <span className="text-xs">Growth prediction models</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
+                      <span className="text-xs">🔔</span>
+                      <span className="text-xs">Early disease detection alerts</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
+                      <span className="text-xs">💰</span>
+                      <span className="text-xs">Cost optimization insights</span>
+                    </div>
                   </div>
-                ))
+                  <PaystackUpgrade 
+                    email={user?.email || ''} 
+                    userId={farmerId} 
+                  />
+                </section>
+              )
+            ) : (
+              <section className="bg-gray-900/10 p-6 rounded-3xl border border-dashed border-gray-800">
+                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">AI Consultant</h2>
+                <p className="text-gray-400">Loading farmer profile...</p>
+              </section>
+            )}
               ) : (
                 <div className="py-8 px-4 text-center border-2 border-dashed border-gray-800 rounded-3xl">
                   <div className="text-3xl mb-3">🚀</div>
