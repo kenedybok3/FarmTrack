@@ -21,10 +21,28 @@ const WeeklyPoultryChart = dynamic(
 export default function Dashboard() {
   const { user, loading: authLoading, logout, getStoredFarmerId } = useAuth()
   const farmerId = user?.id || getStoredFarmerId()
-  const [farmerData, setFarmerData] = useState(null)
+  const [farmerData, setFarmerData] = useState<any>(null)
   const [farmerLoading, setFarmerLoading] = useState(false)
   const [vaccineName, setVaccineName] = useState("")
   const [questionLoading, setQuestionLoading] = useState(false)
+
+  const { 
+    records, 
+    stats, 
+    loading: dataLoading, 
+    addRecord, 
+    addHealthLog,
+    refresh,
+    checkAndGenerateAlerts
+  } = useFarmData(farmerId)
+
+  const {
+    getAIAdvice,
+    fetchAlerts,
+    markAsRead,
+    markAllRead,
+    checkAndGenerateAlerts: aiCheckAlerts
+  } = useAI(farmerId)
 
   // useEffect(() => {
   //   if (!authLoading && !user) {
@@ -60,8 +78,8 @@ export default function Dashboard() {
     window.location.href = "/login"
   }
 
-  const handleSaveRecord = async (record: Omit<DailyRecordInput, 'farmer_id'>) => {
-    return await addRecord(record)
+  const handleSaveRecord = async (newRecord: Omit<DailyRecordInput, 'farmer_id'>) => {
+    return await addRecord(newRecord)
   }
 
   const handleSaveVaccine = async () => {
