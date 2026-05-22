@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFarmData } from "@/hooks/useFarmData";
 import { getFarmerById } from "@/lib/api/farmers";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useAI } from "@/hooks/useAI";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { DailyLogForm } from "@/components/forms/DailyLogForm";
@@ -19,6 +20,7 @@ const WeeklyPoultryChart = dynamic(
 );
 
 export default function Dashboard() {
+  const router = useRouter();
   const { user, loading: authLoading, logout, getStoredFarmerId } = useAuth()
   const farmerId = user?.id || getStoredFarmerId()
   const [farmerData, setFarmerData] = useState<any>(null)
@@ -74,6 +76,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await logout()
+    router.push("/login") // 🚀 Safe, clean client-side redirect
     window.location.href = "/login"
   }
 
