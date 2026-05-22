@@ -124,6 +124,7 @@ export function useAI(farmerId: string | null) {
           - Keep answer under 100 words.
           - Use professional, expert yet encouraging tone.
           - If data is empty, provide general poultry startup advice.
+          -If the user has fewer than 7 days of data, acknowledge that they are just starting out and only analyze the available days instead of assuming the missing days are zeros.
          
          - NIGERIAN MARKET CONTEXT (2026):
            * 50kg Feed: ₦18,000 - ₦24,000
