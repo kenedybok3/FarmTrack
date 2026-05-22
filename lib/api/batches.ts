@@ -7,7 +7,7 @@ export async function createBatch(batch: BatchInput, signal?: AbortSignal) {
      .insert([{ ...batch, current_count: batch.initial_count }])
      .select()
      .single()
-     .abortSignal(signal ?? new AbortController().signal)
+     
 
    if (error) throw error
    return data as Batch
@@ -42,7 +42,7 @@ export async function updateBatch(id: string, updates: Partial<Batch>, signal?: 
      .eq('id', id)
      .select()
      .single()
-     .abortSignal(signal ?? new AbortController().signal)
+    
 
    if (error) throw error
    return data as Batch
