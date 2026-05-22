@@ -7,7 +7,6 @@ export async function createExpense(expense: ExpenseInput, signal?: AbortSignal)
      .insert([expense])
      .select()
      .single()
-     .abortSignal(signal ?? new AbortController().signal)
 
    if (error) throw error
    return data as Expense
