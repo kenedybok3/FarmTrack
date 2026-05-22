@@ -7,7 +7,7 @@ export async function createDailyRecord(record: DailyRecordInput, signal?: Abort
      .insert([record])
      .select()
      .single()
-     .abortSignal(signal ?? new AbortController().signal)
+  
 
    if (error) throw error
    return data as DailyRecord

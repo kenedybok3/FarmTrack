@@ -7,7 +7,7 @@ export async function createHealthLog(log: HealthLogInput, signal?: AbortSignal)
      .insert([log])
      .select()
      .single()
-     .abortSignal(signal ?? new AbortController().signal)
+     
 
    if (error) throw error
    return data as HealthLog

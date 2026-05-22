@@ -7,7 +7,7 @@ export async function createInventoryItem(item: InventoryInput, signal?: AbortSi
      .insert([item])
      .select()
      .single()
-     .abortSignal(signal ?? new AbortController().signal)
+     
 
    if (error) throw error
    return data as Inventory
@@ -42,7 +42,7 @@ export async function updateInventoryItem(id: string, updates: Partial<Inventory
      .eq('id', id)
      .select()
      .single()
-     .abortSignal(signal ?? new AbortController().signal)
+
 
    if (error) throw error
    return data as Inventory
