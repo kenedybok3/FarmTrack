@@ -14,19 +14,20 @@ import { PaystackUpgrade } from "@/components/PaystackUpgrade";
 import { prepareWeeklyData } from "@/components/dashboard/WeeklyPoultryChart";
 import type { DailyRecordInput } from "@/types";
 
+// Dynamic sub-components requiring browser layouts
 const WeeklyPoultryChart = dynamic(
   () => import("@/components/dashboard/WeeklyPoultryChart").then((mod) => mod.WeeklyPoultryChart),
   { ssr: false }
 );
 
-export default function Dashboard() {
+function DashboardComponent() {
   const router = useRouter();
-  const { user, loading: authLoading, logout, getStoredFarmerId } = useAuth()
-  const farmerId = user?.id || getStoredFarmerId()
-  const [farmerData, setFarmerData] = useState<any>(null)
-  const [farmerLoading, setFarmerLoading] = useState(false)
-  const [vaccineName, setVaccineName] = useState("")
-  const [questionLoading, setQuestionLoading] = useState(false)
+  const { user, loading: authLoading, logout, getStoredFarmerId } = useAuth();
+  const farmerId = user?.id || getStoredFarmerId();
+  const [farmerData, setFarmerData] = useState<any>(null);
+  const [farmerLoading, setFarmerLoading] = useState(false);
+  const [vaccineName, setVaccineName] = useState("");
+  const [questionLoading, setQuestionLoading] = useState(false);
 
   const { 
     records, 
@@ -35,7 +36,7 @@ export default function Dashboard() {
     addRecord, 
     addHealthLog,
     refresh
-  } = useFarmData(farmerId)
+  } = useFarmData(farmerId);
 
   const {
     getAIAdvice,
@@ -43,73 +44,73 @@ export default function Dashboard() {
     markAsRead,
     markAllRead,
     checkAndGenerateAlerts: aiCheckAlerts
-  } = useAI(farmerId)
+  } = useAI(farmerId);
 
   useEffect(() => {
     if (farmerId) {
-      aiCheckAlerts()
+      aiCheckAlerts();
     }
-  }, [farmerId, aiCheckAlerts])
+  }, [farmerId, aiCheckAlerts]);
 
   // Fetch farmer data to check premium status (With Demo UUID Safety Guard)
   useEffect(() => {
     if (!farmerId || farmerId === "demo") {
       if (farmerId === "demo") {
-        setFarmerData({ is_premium: true }) // Give demo profiles automatic pro capabilities
+        setFarmerData({ is_premium: true }); // Give demo profiles automatic pro capabilities
       }
-      return
+      return;
     }
 
-    setFarmerLoading(true)
+    setFarmerLoading(true);
     getFarmerById(farmerId)
       .then((data) => {
-        setFarmerData(data)
+        setFarmerData(data);
       })
       .catch((err) => {
-        console.error("Failed to fetch farmer data:", err)
+        console.error("Failed to fetch farmer data:", err);
       })
       .finally(() => {
-        setFarmerLoading(false)
-      })
-  }, [farmerId])
+        setFarmerLoading(false);
+      });
+  }, [farmerId]);
 
   const handleLogout = async () => {
-    await logout()
-    router.push("/login") // 🚀 Safe, clean server-side redirect
-  }
+    await logout();
+    router.push("/login"); // 🚀 Safe, clean server-rendering redirect
+  };
 
   const handleSaveRecord = async (newRecord: Omit<DailyRecordInput, 'farmer_id'>) => {
-    return await addRecord(newRecord)
-  }
+    return await addRecord(newRecord);
+  };
 
   const handleSaveVaccine = async () => {
-    if (!vaccineName.trim()) return
+    if (!vaccineName.trim()) return;
     
     const result = await addHealthLog({
       action: "Vaccination",
       details: vaccineName,
       cost: 0,
       record_date: new Date().toISOString().split('T')[0]
-    })
+    });
     
     if (result.success) {
-      setVaccineName("")
-      alert(`${vaccineName} recorded!`)
+      setVaccineName("");
+      alert(`${vaccineName} recorded!`);
     } else {
-      alert(result.error || "Failed to save")
+      alert(result.error || "Failed to save");
     }
-  }
+  };
 
   const handleAskAI = async (question: string) => {
-    if (!question.trim()) return { success: false, error: 'Please enter a question' }
+    if (!question.trim()) return { success: false, error: 'Please enter a question' };
     
-    setQuestionLoading(true)
-    const weekly = prepareWeeklyData(records)
-    const result = await getAIAdvice(question, records, weekly)
-    setQuestionLoading(false)
+    setQuestionLoading(true);
+    const weekly = prepareWeeklyData(records);
+    const result = await getAIAdvice(question, records, weekly);
+    setQuestionLoading(false);
     
-    return result
-  }
+    return result;
+  };
 
   if (authLoading || dataLoading) {
     return (
@@ -119,13 +120,11 @@ export default function Dashboard() {
           <p className="text-gray-400">Loading your farm...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!user && !farmerId) {
-    if (typeof window !== 'undefined') {
-      router.push('/login')
-    }
+    router.push('/login');
     return (
       <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
         <div className="text-center">
@@ -133,7 +132,7 @@ export default function Dashboard() {
           <p className="text-gray-400">Redirecting...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -272,3 +271,8 @@ export default function Dashboard() {
     </div>
   );
 }
+
+// 🛡️ CRITICAL PRODUCTION SHIELD: Completely bypasses server pre-render evaluation
+export default dynamic(() => Promise.resolve(DashboardComponent), {
+  ssr: false,
+});
