@@ -45,39 +45,37 @@ export default function Dashboard() {
     checkAndGenerateAlerts: aiCheckAlerts
   } = useAI(farmerId)
 
-  // useEffect(() => {
-  //   if (!authLoading && !user) {
-  //     window.location.href = "/login"
-  //   }
-  // }, [authLoading, user])
-
   useEffect(() => {
     if (farmerId) {
       aiCheckAlerts()
     }
   }, [farmerId, aiCheckAlerts])
 
-  // Fetch farmer data to check premium status
+  // Fetch farmer data to check premium status (With Demo UUID Safety Guard)
   useEffect(() => {
-    if (farmerId) {
-      setFarmerLoading(true)
-      getFarmerById(farmerId)
-        .then((data) => {
-          setFarmerData(data)
-        })
-        .catch((err) => {
-          console.error("Failed to fetch farmer data:", err)
-        })
-        .finally(() => {
-          setFarmerLoading(false)
-        })
+    if (!farmerId || farmerId === "demo") {
+      if (farmerId === "demo") {
+        setFarmerData({ is_premium: true }) // Give demo profiles automatic pro capabilities
+      }
+      return
     }
+
+    setFarmerLoading(true)
+    getFarmerById(farmerId)
+      .then((data) => {
+        setFarmerData(data)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch farmer data:", err)
+      })
+      .finally(() => {
+        setFarmerLoading(false)
+      })
   }, [farmerId])
 
   const handleLogout = async () => {
     await logout()
-    router.push("/login") // 🚀 Safe, clean client-side redirect
-    window.location.href = "/login"
+    router.push("/login") // 🚀 Safe, clean server-side redirect
   }
 
   const handleSaveRecord = async (newRecord: Omit<DailyRecordInput, 'farmer_id'>) => {
@@ -126,7 +124,7 @@ export default function Dashboard() {
 
   if (!user && !farmerId) {
     if (typeof window !== 'undefined') {
-      window.location.href = '/login'
+      router.push('/login')
     }
     return (
       <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
@@ -190,50 +188,50 @@ export default function Dashboard() {
             />
           </section>
 
-            {/* AI Consultant */}
-            {!farmerLoading && farmerData ? (
-              farmerData.is_premium ? (
-                <AIConsultant 
-                  onAsk={handleAskAI} 
-                  loading={questionLoading} 
-                />
-              ) : (
-                <section className="bg-gray-900/10 p-6 rounded-3xl border border-dashed border-gray-800">
-                  <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">AI Consultant (Pro Feature)</h2>
-                  <p className="text-gray-400 mb-4">
-                    Unlock AI-powered farming advice with our Premium plan. Get personalized recommendations, 
-                    predictive analytics, and expert insights to maximize your farm's productivity.
-                  </p>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
-                      <span className="text-xs">🎯</span>
-                      <span className="text-xs">Personalized feeding schedules</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
-                      <span className="text-xs">📊</span>
-                      <span className="text-xs">Growth prediction models</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
-                      <span className="text-xs">🔔</span>
-                      <span className="text-xs">Early disease detection alerts</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
-                      <span className="text-xs">💰</span>
-                      <span className="text-xs">Cost optimization insights</span>
-                    </div>
-                  </div>
-                  <PaystackUpgrade 
-                    email={user?.email || ""} 
-                    userId={user?.id || ""} 
-                  />
-                </section>
-              )
+          {/* AI Consultant */}
+          {!farmerLoading && farmerData ? (
+            farmerData.is_premium ? (
+              <AIConsultant 
+                onAsk={handleAskAI} 
+                loading={questionLoading} 
+              />
             ) : (
               <section className="bg-gray-900/10 p-6 rounded-3xl border border-dashed border-gray-800">
-                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">AI Consultant</h2>
-                <p className="text-gray-400">Loading farmer profile...</p>
+                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">AI Consultant (Pro Feature)</h2>
+                <p className="text-gray-400 mb-4">
+                  Unlock AI-powered farming advice with our Premium plan. Get personalized recommendations, 
+                  predictive analytics, and expert insights to maximize your farm's productivity.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
+                    <span className="text-xs">🎯</span>
+                    <span className="text-xs">Personalized feeding schedules</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
+                    <span className="text-xs">📊</span>
+                    <span className="text-xs">Growth prediction models</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
+                    <span className="text-xs">🔔</span>
+                    <span className="text-xs">Early disease detection alerts</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl">
+                    <span className="text-xs">💰</span>
+                    <span className="text-xs">Cost optimization insights</span>
+                  </div>
+                </div>
+                <PaystackUpgrade 
+                  email={user?.email || ""} 
+                  userId={user?.id || ""} 
+                />
               </section>
-            )}
+            )
+          ) : (
+            <section className="bg-gray-900/10 p-6 rounded-3xl border border-dashed border-gray-800">
+              <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">AI Consultant</h2>
+              <p className="text-gray-400">Loading farmer profile...</p>
+            </section>
+          )}
 
           {/* Health Logs */}
           <section className="bg-gray-900/10 p-6 rounded-3xl border border-dashed border-gray-800">
