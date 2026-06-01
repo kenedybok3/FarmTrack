@@ -19,9 +19,9 @@ export default function Login() {
     if (!loading) setIsVisible(true);
   }, [loading]);
 
-  // Redirect if logged in
+  // Redirect if logged in (exclude demo mode users so they see the sign-in form)
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && user.id !== 'demo') {
       router.replace("/dashboard");
     }
   }, [user, loading, router]);

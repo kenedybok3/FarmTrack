@@ -1,3 +1,4 @@
+"use client"
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Farmer } from '@/types'
@@ -8,7 +9,6 @@ interface AuthState {
   error: string | null
 }
 
-// Self-healing farmer profile upsert - uses UUID id from auth.users directly
 async function upsertFarmerProfile(id: string, email: string, fullName: string): Promise<Farmer | null> {
   const { data, error } = await supabase
     .from('farmers')
@@ -32,7 +32,6 @@ async function upsertFarmerProfile(id: string, email: string, fullName: string):
   return data as Farmer
 }
 
-// Get farmer profile directly by user ID
 async function getFarmerByUserId(id: string): Promise<Farmer | null> {
   const { data, error } = await supabase
     .from('farmers')
@@ -54,7 +53,6 @@ export function useAuth() {
     error: null
   })
 
-  // Session recovery: force signOut if refresh token is missing/invalid
   const recoverSession = useCallback(async () => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession()
@@ -70,7 +68,6 @@ export function useAuth() {
       
       return session.user
     } catch (err) {
-      // If any auth error, force signOut for clean state
       await supabase.auth.signOut()
       return null
     }
@@ -83,7 +80,6 @@ export function useAuth() {
         ? (document.cookie.match(new RegExp('(^| )farmer_id=([^;]+)')) || [])[2] || null
         : null
       
-      // If demo mode is active, set a mock user object
       if (isDemoMode) {
         const demoUser: Farmer = {
           id: 'demo',
@@ -98,12 +94,10 @@ export function useAuth() {
         return
       }
 
-      // Session recovery check
       const user = await recoverSession()
       
       if (!user?.email) {
-        // Try stored farmer ID as fallback
-        if (storedFarmerId) {
+        if (storedFarmerId && storedFarmerId !== 'demo') {
           const farmer = await getFarmerByUserId(storedFarmerId)
           if (farmer?.id) {
             localStorage.setItem('farmer_id', farmer.id)
@@ -115,7 +109,6 @@ export function useAuth() {
         return
       }
 
-      // Self-healing: check if farmer profile exists, create if missing
       let farmer = await getFarmerByUserId(user.id)
 
       if (!farmer) {
@@ -143,7 +136,6 @@ export function useAuth() {
         return
       }
       
-      // On error, force clean session
       await supabase.auth.signOut()
       setState({ user: null, loading: false, error: err instanceof Error ? err.message : null })
     }
@@ -171,6 +163,11 @@ export function useAuth() {
     setState(prev => ({ ...prev, error: null, loading: true }))
 
     try {
+      // Clear out demo tags immediately on active user form submission
+      document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+      document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+      localStorage.removeItem('farmer_id')
+
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -184,7 +181,6 @@ export function useAuth() {
         throw error
       }
 
-      // Self-healing login: ensure farmer profile exists
       const user = authData?.user
       if (!user) {
         throw new Error('No user returned from sign in')
@@ -204,10 +200,6 @@ export function useAuth() {
         throw new Error('Failed to retrieve or create farmer record')
       }
 
-      // Clear demo cookies when user logs in
-      document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
-      document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
-
       localStorage.setItem('farmer_id', farmer.id)
       setState({ user: farmer, loading: false, error: null })
       return { success: true, farmer }
@@ -223,24 +215,26 @@ export function useAuth() {
     }
   }
 
-   const register = async (email: string, name: string, password: string, farmType = 'Poultry') => {
-     setState(prev => ({ ...prev, error: null, loading: true }))
+  const register = async (email: string, name: string, password: string, farmType = 'Poultry') => {
+    setState(prev => ({ ...prev, error: null, loading: true }))
 
-     try {
-       const { data: authData, error: authError } = await supabase.auth.signUp({
-         email,
-         password,
-         options: {
-           data: {
-             full_name: name
-           }
-         }
-       })
+    try {
+      document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+      document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+      localStorage.removeItem('farmer_id')
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name
+          }
+        }
+      })
 
       if (authError) {
-        if (authError.message?.includes('User already registered') ||
-            authError.code === 'user_already_exists') {
-          // User exists - sign in instead
+        if (authError.message?.includes('User already registered') || authError.code === 'user_already_exists') {
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email,
             password
@@ -254,7 +248,6 @@ export function useAuth() {
             throw new Error('Sign-in succeeded but no user data returned')
           }
 
-          // Create farmer profile for existing user
           const farmer = await upsertFarmerProfile(
             signInData.user.id,
             email,
@@ -264,17 +257,12 @@ export function useAuth() {
             throw new Error('Failed to create farmer record')
           }
 
-          document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
-          document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
           localStorage.setItem('farmer_id', farmer.id)
           setState({ user: farmer, loading: false, error: null })
           return { success: true, farmer }
         }
 
-        // Handle email rate limit
-        if (authError.message?.includes('rate limit') ||
-            authError.message?.includes('Rate limit') ||
-            authError.status === 429) {
+        if (authError.message?.includes('rate limit') || authError.message?.includes('Rate limit') || authError.status === 429) {
           throw new Error('Too many sign-up attempts. Please wait a few minutes before trying again.')
         }
 
@@ -282,30 +270,22 @@ export function useAuth() {
         throw authError
       }
 
-       // Get the newly created user
-       const user = authData?.user
-       if (!user?.id) {
-         throw new Error('Signup succeeded but no user ID returned. Email confirmation may be required.')
-       }
+      const user = authData?.user
+      if (!user?.id) {
+        throw new Error('Signup succeeded but no user ID returned. Email confirmation may be required.')
+      }
 
-       // Wait for database trigger to complete (if it exists)
-       // This prevents race condition where both trigger and frontend try to insert
-       await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-       // Self-healing registration: create farmer profile using upsert
-       const farmer = await upsertFarmerProfile(
-         user.id,
-         email,
-         user.user_metadata?.full_name || name
-       )
+      const farmer = await upsertFarmerProfile(
+        user.id,
+        email,
+        user.user_metadata?.full_name || name
+      )
 
       if (!farmer) {
         throw new Error('Failed to create farmer record')
       }
-
-      // Clear demo cookies when user registers
-      document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
-      document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
 
       localStorage.setItem('farmer_id', farmer.id)
       setState({ user: farmer, loading: false, error: null })
@@ -323,33 +303,17 @@ export function useAuth() {
 
   const signUpWithOtp = async (phone: string) => {
     setState(prev => ({ ...prev, error: null, loading: true }))
-
     try {
-      const { data, error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         phone,
-        options: {
-          shouldCreateUser: true,
-        }
+        options: { shouldCreateUser: true }
       })
-
-      if (error) {
-        throw error
-      }
-
-      // User was created/sent OTP successfully
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: null
-      }))
+      if (error) throw error
+      setState(prev => ({ ...prev, loading: false, error: null }))
       return { success: true, message: 'OTP sent to your phone number' }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'OTP sign-up failed'
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: message
-      }))
+      setState(prev => ({ ...prev, loading: false, error: message }))
       return { success: false, error: message }
     }
   }
@@ -357,12 +321,10 @@ export function useAuth() {
   const logout = async () => {
     try {
       await supabase.auth.signOut()
-
-      // Clear our app cookies
       document.cookie = "farmer_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
       document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;"
+      localStorage.removeItem('farmer_id')
 
-      // Clear all Supabase cookies (sb-*)
       document.cookie.split(';').forEach(cookie => {
         const [name] = cookie.trim().split('=')
         if (name.startsWith('sb-')) {
@@ -378,20 +340,27 @@ export function useAuth() {
 
   const loginDemo = async () => {
     setState(prev => ({ ...prev, error: null, loading: true }))
-    
     try {
       document.cookie = "demo_mode=true; path=/;"
       document.cookie = "farmer_id=demo; path=/;"
-      setState({ user: null, loading: false, error: null })
+      
+      const demoUser: Farmer = {
+        id: 'demo',
+        email: 'demo@farmtrack.app',
+        full_name: 'Demo Farmer',
+        farm_type: 'Poultry',
+        bird_types: ['Layers'],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      // ✅ FIX: Set user immediately so login pages catch the redirect!
+      setState({ user: demoUser, loading: false, error: null })
       return { success: true }
     } catch (err: unknown) {
       console.error('Demo login error:', err)
       const message = err instanceof Error ? err.message : 'Demo login failed'
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: message
-      }))
+      setState(prev => ({ ...prev, loading: false, error: message }))
       return { success: false, error: message }
     }
   }
