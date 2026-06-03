@@ -66,6 +66,6 @@ export async function getLowStockItems(farmerId: string) {
   )
 }
 
-export async function updateInventoryQuantity(id: string, quantity: number, farmerId?: string, signal?: AbortSignal) {
-   return updateInventoryItem(id, { quantity }, farmerId, signal)
+export async function updateInventoryQuantity(id: string, quantity: number, signal?: AbortSignal) {
+    return updateInventoryItem(id, { quantity }, undefined, signal)
   }

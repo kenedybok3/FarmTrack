@@ -58,6 +58,6 @@ export async function deleteBatch(id: string, signal?: AbortSignal) {
    if (error) throw error
   }
 
-export async function updateBatchCount(id: string, newCount: number, farmerId?: string, signal?: AbortSignal) {
-   return updateBatch(id, { current_count: newCount }, farmerId, signal)
+export async function updateBatchCount(id: string, newCount: number, signal?: AbortSignal) {
+    return updateBatch(id, { current_count: newCount }, undefined, signal)
   }
