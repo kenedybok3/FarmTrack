@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/hooks/lib/supabase'
 import type { HealthLog, HealthLogInput } from '@/types'
 
 export async function createHealthLog(log: HealthLogInput, signal?: AbortSignal) {
@@ -25,24 +25,26 @@ export async function getHealthLogs(farmerId: string, limit = 50) {
   return data as HealthLog[]
 }
 
-export async function updateHealthLog(id: string, updates: Partial<HealthLogInput>) {
-  const { data, error } = await supabase
-    .from('health_logs')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data as HealthLog
-}
-
-export async function deleteHealthLog(id: string, signal?: AbortSignal) {
-   const { error } = await supabase
+export async function updateHealthLog(id: string, updates: Partial<HealthLogInput>, farmerId: string) {
+   const { data, error } = await supabase
      .from('health_logs')
-     .delete()
+     .update(updates)
      .eq('id', id)
-     .abortSignal(signal ?? new AbortController().signal)
+     .eq('farmer_id', farmerId)
+     .select()
+     .single()
 
    if (error) throw error
+   return data as HealthLog
  }
+
+export async function deleteHealthLog(id: string, farmerId: string, signal?: AbortSignal) {
+    const { error } = await supabase
+      .from('health_logs')
+      .delete()
+      .eq('id', id)
+      .eq('farmer_id', farmerId)
+      .abortSignal(signal ?? new AbortController().signal)
+
+    if (error) throw error
+  }

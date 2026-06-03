@@ -2,7 +2,6 @@
 
 import { useCallback } from "react"
 import { usePaystackPayment } from "react-paystack"
-import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 interface PaystackUpgradeProps {
@@ -13,42 +12,26 @@ interface PaystackUpgradeProps {
 export function PaystackUpgrade({ email, userId }: PaystackUpgradeProps) {
   const amount = 250000 // ₦2,500 in kobo
 
-  // 1. Put ONLY the payment data details inside the hook configuration
+  // 1. Put payment config with userId in metadata and empty custom_fields
   const initializePayment = usePaystackPayment({
     reference: `farmtrack-premium-${Date.now()}`,
     amount,
     email,
+    metadata: { custom_fields: [], userId },
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? "",
   })
 
-  // 2. Extracted the success handler exactly as you wrote it
-  const handleSuccess = async () => {
-    try {
-      const { error } = await supabase
-        .from("farmers")
-        .update({
-          is_premium: true,
-          subscription_date: new Date().toISOString(),
-        })
-        .eq("id", userId)
-
-      if (error) {
-        toast.error("Payment succeeded but subscription update failed. Please contact support.")
-        return
-      }
-
-      toast.success("Upgrade successful! You are now a premium farmer.")
-    } catch (err) {
-      toast.error("An unexpected error occurred while updating your subscription.")
-    }
+  // 2. Secure success handler - only shows toast, webhook handles DB update
+  const handleSuccess = () => {
+    toast.success("Payment successful! Your subscription will be activated shortly via webhook.")
   }
 
-  // 3. Extracted the cancel handler exactly as you wrote it
+  // 3. Cancel handler
   const handleClose = () => {
     toast.error("Payment cancelled. Please try again.")
   }
 
-  // 4. Trigger payment and pass the actions directly here (Fixes all 3 errors)
+  // 4. Trigger payment
   const handleUpgrade = useCallback(() => {
     initializePayment({
       onSuccess: handleSuccess,

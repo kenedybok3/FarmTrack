@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/hooks/lib/supabase'
 import type { Batch, BatchInput } from '@/types'
 
 export async function createBatch(batch: BatchInput, signal?: AbortSignal) {
@@ -11,7 +11,7 @@ export async function createBatch(batch: BatchInput, signal?: AbortSignal) {
 
    if (error) throw error
    return data as Batch
- }
+  }
 
 export async function getBatches(farmerId: string) {
   const { data, error } = await supabase
@@ -35,18 +35,18 @@ export async function getBatchById(id: string) {
   return data as Batch
 }
 
-export async function updateBatch(id: string, updates: Partial<Batch>, signal?: AbortSignal) {
+export async function updateBatch(id: string, updates: Partial<Batch>, farmerId?: string, signal?: AbortSignal) {
    const { data, error } = await supabase
      .from('batches')
      .update(updates)
      .eq('id', id)
+     .eq('farmer_id', farmerId)
      .select()
      .single()
-    
-
+     
    if (error) throw error
    return data as Batch
- }
+  }
 
 export async function deleteBatch(id: string, signal?: AbortSignal) {
    const { error } = await supabase
@@ -56,8 +56,8 @@ export async function deleteBatch(id: string, signal?: AbortSignal) {
      .abortSignal(signal ?? new AbortController().signal)
 
    if (error) throw error
- }
+  }
 
-export async function updateBatchCount(id: string, newCount: number, signal?: AbortSignal) {
-   return updateBatch(id, { current_count: newCount }, signal)
- }
+export async function updateBatchCount(id: string, newCount: number, farmerId?: string, signal?: AbortSignal) {
+   return updateBatch(id, { current_count: newCount }, farmerId, signal)
+  }

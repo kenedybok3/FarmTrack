@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useFarmData } from "@/hooks/useFarmData"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
-import { CURRENCY_SYMBOL } from "@/lib/constants"
+import { CURRENCY_SYMBOL } from "@/hooks/lib/constants"
 
 export default function BatchesPage() {
   const router = useRouter()

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/hooks/lib/supabase'
 import type { Expense, ExpenseInput } from '@/types'
 
 export async function createExpense(expense: ExpenseInput, signal?: AbortSignal) {
@@ -24,27 +24,29 @@ export async function getExpenses(farmerId: string, limit = 50) {
   return data as Expense[]
 }
 
-export async function updateExpense(id: string, updates: Partial<ExpenseInput>) {
-  const { data, error } = await supabase
-    .from('expenses')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data as Expense
-}
-
-export async function deleteExpense(id: string, signal?: AbortSignal) {
-   const { error } = await supabase
+export async function updateExpense(id: string, updates: Partial<ExpenseInput>, farmerId: string) {
+   const { data, error } = await supabase
      .from('expenses')
-     .delete()
+     .update(updates)
      .eq('id', id)
-     .abortSignal(signal ?? new AbortController().signal)
+     .eq('farmer_id', farmerId)
+     .select()
+     .single()
 
    if (error) throw error
+   return data as Expense
  }
+
+export async function deleteExpense(id: string, farmerId: string, signal?: AbortSignal) {
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', id)
+      .eq('farmer_id', farmerId)
+      .abortSignal(signal ?? new AbortController().signal)
+
+    if (error) throw error
+  }
 
 export async function getExpensesByCategory(farmerId: string) {
   const { data, error } = await supabase

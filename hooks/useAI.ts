@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
-import { getAlerts, createAlert, markAlertAsRead, markAllAlertsAsRead, getUnreadAlertCount } from '@/lib/api/alerts'
-import { getDailyRecords } from '@/lib/api/daily-records'
-import { getHealthLogs } from '@/lib/api/health-logs'
+import { getAlerts, createAlert, markAlertAsRead, markAllAlertsAsRead, getUnreadAlertCount } from '@/hooks/lib/api/alerts'
+import { getDailyRecords } from '@/hooks/lib/api/daily-records'
+import { getHealthLogs } from '@/hooks/lib/api/health-logs'
 import type { AIAlertInput, DailyRecord, WeeklyDataPoint, AIAlert } from '@/types'
 
 
@@ -274,13 +274,13 @@ export function useAI(farmerId: string | null) {
      return await getUnreadAlertCount(farmerId)
    }, [isDemo, farmerId])
 
-   const markAsRead = useCallback(async (alertId: string) => {
-     if (!isDemo) {
-       await markAlertAsRead(alertId)
-     }
-     const count = await fetchUnreadCount()
-     setAlertCount(count)
-   }, [isDemo, fetchUnreadCount])
+const markAsRead = useCallback(async (alertId: string) => {
+      if (!isDemo && farmerId) {
+        await markAlertAsRead(alertId, farmerId)
+      }
+      const count = await fetchUnreadCount()
+      setAlertCount(count)
+    }, [isDemo, farmerId, fetchUnreadCount])
 
    const markAllRead = useCallback(async () => {
      if (!isDemo && farmerId) {

@@ -138,3 +138,10 @@ export interface WeeklyDataPoint {
   eggs: number;
   feed: number;
 }
+
+export interface SyncOperation {
+  id: string;
+  timestamp: string;
+  type: string;
+  payload: any;
+}

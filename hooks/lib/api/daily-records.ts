@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/hooks/lib/supabase'
 import type { DailyRecord, DailyRecordInput, FarmStats } from '@/types'
 
 export async function createDailyRecord(record: DailyRecordInput, signal?: AbortSignal) {
@@ -38,11 +38,12 @@ export async function getLatestDailyRecord(farmerId: string) {
   return data as DailyRecord | null
 }
 
-export async function updateDailyRecord(id: string, updates: Partial<DailyRecordInput>) {
+export async function updateDailyRecord(id: string, updates: Partial<DailyRecordInput>, farmerId: string) {
   const { data, error } = await supabase
     .from('daily_records')
     .update(updates)
     .eq('id', id)
+    .eq('farmer_id', farmerId)
     .select()
     .single()
 
@@ -50,14 +51,15 @@ export async function updateDailyRecord(id: string, updates: Partial<DailyRecord
   return data as DailyRecord
 }
 
-export async function deleteDailyRecord(id: string, signal?: AbortSignal) {
+export async function deleteDailyRecord(id: string, farmerId: string, signal?: AbortSignal) {
    const { error } = await supabase
      .from('daily_records')
      .delete()
      .eq('id', id)
+     .eq('farmer_id', farmerId)
      .abortSignal(signal ?? new AbortController().signal)
 
-   if (error) throw error
+    if (error) throw error
  }
 
 export async function getFarmStats(farmerId: string): Promise<FarmStats> {

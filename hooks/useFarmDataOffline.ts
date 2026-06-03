@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { 
   getDailyRecords, createDailyRecord, deleteDailyRecord, getFarmStats 
-} from '@/lib/api/daily-records'
-import { getHealthLogs, createHealthLog, deleteHealthLog } from '@/lib/api/health-logs'
-import { getExpenses, createExpense, deleteExpense, getTotalExpenses } from '@/lib/api/expenses'
-import { getBatches, createBatch, updateBatchCount, deleteBatch } from '@/lib/api/batches'
-import { getInventory, createInventoryItem, updateInventoryQuantity, deleteInventoryItem } from '@/lib/api/inventory'
+} from '@/hooks/lib/api/daily-records'
+import { getHealthLogs, createHealthLog, deleteHealthLog } from '@/hooks/lib/api/health-logs'
+import { getExpenses, createExpense, deleteExpense, getTotalExpenses } from '@/hooks/lib/api/expenses'
+import { getBatches, createBatch, updateBatchCount, deleteBatch } from '@/hooks/lib/api/batches'
+import { getInventory, createInventoryItem, updateInventoryQuantity, deleteInventoryItem } from '@/hooks/lib/api/inventory'
 import type { DailyRecord, DailyRecordInput, HealthLog, Expense, Batch, Inventory, FarmStats } from '@/types'
 
 interface FarmDataState {

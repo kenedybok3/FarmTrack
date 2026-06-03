@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFarmData } from "@/hooks/useFarmData";
-import { getFarmerById } from "@/lib/api/farmers";
+import { getFarmerById } from "@/hooks/lib/api/farmers";
 import { useRouter } from "next/navigation";
 import { useAI } from "@/hooks/useAI";
 import { StatsCards } from "@/components/dashboard/StatsCards";

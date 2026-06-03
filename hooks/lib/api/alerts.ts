@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/hooks/lib/supabase'
 import type { AIAlert, AIAlertInput } from '@/types'
 
 export async function createAlert(alert: AIAlertInput) {
@@ -47,11 +47,12 @@ export async function getUnreadAlertCount(farmerId: string): Promise<number> {
   return data?.length || 0
 }
 
-export async function markAlertAsRead(id: string) {
+export async function markAlertAsRead(id: string, farmerId: string) {
   const { error } = await supabase
     .from('ai_alerts')
     .update({ is_read: true })
     .eq('id', id)
+    .eq('farmer_id', farmerId)
 
   if (error) throw error
 }
@@ -66,11 +67,12 @@ export async function markAllAlertsAsRead(farmerId: string) {
   if (error) throw error
 }
 
-export async function deleteAlert(id: string) {
+export async function deleteAlert(id: string, farmerId: string) {
   const { error } = await supabase
     .from('ai_alerts')
     .delete()
     .eq('id', id)
+    .eq('farmer_id', farmerId)
 
   if (error) throw error
 }
