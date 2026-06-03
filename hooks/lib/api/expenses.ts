@@ -37,12 +37,11 @@ export async function updateExpense(id: string, updates: Partial<ExpenseInput>, 
    return data as Expense
  }
 
-export async function deleteExpense(id: string, farmerId: string, signal?: AbortSignal) {
+export async function deleteExpense(id: string, signal?: AbortSignal) {
     const { error } = await supabase
       .from('expenses')
       .delete()
       .eq('id', id)
-      .eq('farmer_id', farmerId)
       .abortSignal(signal ?? new AbortController().signal)
 
     if (error) throw error

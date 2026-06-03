@@ -51,16 +51,15 @@ export async function updateDailyRecord(id: string, updates: Partial<DailyRecord
   return data as DailyRecord
 }
 
-export async function deleteDailyRecord(id: string, farmerId: string, signal?: AbortSignal) {
-   const { error } = await supabase
-     .from('daily_records')
-     .delete()
-     .eq('id', id)
-     .eq('farmer_id', farmerId)
-     .abortSignal(signal ?? new AbortController().signal)
+export async function deleteDailyRecord(id: string, signal?: AbortSignal) {
+    const { error } = await supabase
+      .from('daily_records')
+      .delete()
+      .eq('id', id)
+      .abortSignal(signal ?? new AbortController().signal)
 
     if (error) throw error
- }
+  }
 
 export async function getFarmStats(farmerId: string): Promise<FarmStats> {
   const records = await getDailyRecords(farmerId, 100)

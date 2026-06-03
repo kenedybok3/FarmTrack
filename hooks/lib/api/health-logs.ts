@@ -38,12 +38,11 @@ export async function updateHealthLog(id: string, updates: Partial<HealthLogInpu
    return data as HealthLog
  }
 
-export async function deleteHealthLog(id: string, farmerId: string, signal?: AbortSignal) {
+export async function deleteHealthLog(id: string, signal?: AbortSignal) {
     const { error } = await supabase
       .from('health_logs')
       .delete()
       .eq('id', id)
-      .eq('farmer_id', farmerId)
       .abortSignal(signal ?? new AbortController().signal)
 
     if (error) throw error

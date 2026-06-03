@@ -49,16 +49,15 @@ export async function updateInventoryItem(id: string, updates: Partial<Inventory
    return data as Inventory
   }
 
-export async function deleteInventoryItem(id: string, farmerId?: string, signal?: AbortSignal) {
-    const { error } = await supabase
-      .from('inventory')
-      .delete()
-      .eq('id', id)
-      .eq('farmer_id', farmerId)
-      .abortSignal(signal ?? new AbortController().signal)
+export async function deleteInventoryItem(id: string, signal?: AbortSignal) {
+     const { error } = await supabase
+       .from('inventory')
+       .delete()
+       .eq('id', id)
+       .abortSignal(signal ?? new AbortController().signal)
 
-    if (error) throw error
-  }
+     if (error) throw error
+   }
 
 export async function getLowStockItems(farmerId: string) {
   const inventory = await getInventory(farmerId)
