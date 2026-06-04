@@ -14,7 +14,6 @@ export function PaystackUpgrade({ email, userId }: PaystackUpgradeProps) {
 
   // 1. Put payment config with userId in metadata and empty custom_fields
   const initializePayment = usePaystackPayment({
-    reference: `farmtrack-premium-${Date.now()}`,
     amount,
     email,
     metadata: { custom_fields: [], userId },
@@ -34,6 +33,7 @@ export function PaystackUpgrade({ email, userId }: PaystackUpgradeProps) {
   // 4. Trigger payment
   const handleUpgrade = useCallback(() => {
     initializePayment({
+      reference: `FT-${Date.now()}`,
       onSuccess: handleSuccess,
       onClose: handleClose,
     })
