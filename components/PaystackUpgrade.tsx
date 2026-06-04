@@ -33,7 +33,9 @@ export function PaystackUpgrade({ email, userId }: PaystackUpgradeProps) {
   // 4. Trigger payment
   const handleUpgrade = useCallback(() => {
     initializePayment({
-      reference: `FT-${Date.now()}`,
+      config: {
+        reference: `FT-${Date.now()}`,
+      } as any,
       onSuccess: handleSuccess,
       onClose: handleClose,
     })
