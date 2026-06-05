@@ -33,9 +33,18 @@ serve(async (req) => {
     })
   }
 
-  // Get the request body
-  const body = await req.text()
-  
+  // Parse the request body as JSON; keep a raw copy for HMAC verification
+  const rawBody = await req.clone().text()
+  let eventData
+  try {
+    eventData = await req.json()
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    })
+  }
+
   // Verify the signature using HMAC-SHA512
   const key = await getKey()
   const signatureBuffer = new Uint8Array(
@@ -46,22 +55,12 @@ serve(async (req) => {
     "HMAC",
     key,
     signatureBuffer,
-    new TextEncoder().encode(body)
+    new TextEncoder().encode(rawBody)
   )
 
   if (!isValid) {
     return new Response(JSON.stringify({ error: "Invalid signature" }), {
       status: 401,
-      headers: { "Content-Type": "application/json" }
-    })
-  }
-
-  let eventData
-  try {
-    eventData = JSON.parse(body)
-  } catch (e) {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
       headers: { "Content-Type": "application/json" }
     })
   }
