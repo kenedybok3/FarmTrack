@@ -1,9 +1,11 @@
+"use client"
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFarmData } from "@/hooks/useFarmData";
 import { getFarmerById } from "@/hooks/lib/api/farmers";
 import { useRouter } from "next/navigation";
 import { useAI } from "@/hooks/useAI";
+import { supabase } from "@/hooks/lib/supabase";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { DailyLogForm } from "@/components/forms/DailyLogForm";
 import { AIAlerts } from "@/components/dashboard/AIAlerts";
@@ -24,6 +26,7 @@ export default function DashboardComponent() {
   const { user, loading: authLoading, logout, getStoredFarmerId } = useAuth();
   const farmerId = user?.id || getStoredFarmerId();
   const [farmerData, setFarmerData] = useState<any>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const [farmerLoading, setFarmerLoading] = useState(false);
   const [vaccineName, setVaccineName] = useState("");
   const [questionLoading, setQuestionLoading] = useState(false);
@@ -64,6 +67,7 @@ export default function DashboardComponent() {
     getFarmerById(farmerId)
       .then((data) => {
         setFarmerData(data);
+        setIsPremium(data?.is_premium ?? false);
       })
       .catch((err) => {
         console.error("Failed to fetch farmer data:", err);
@@ -71,6 +75,34 @@ export default function DashboardComponent() {
       .finally(() => {
         setFarmerLoading(false);
       });
+  }, [farmerId]);
+
+  // Realtime listener: keep premium status in sync when Paystack webhook updates the database
+  useEffect(() => {
+    if (!farmerId || farmerId === "demo") {
+      return;
+    }
+
+    const channel = supabase
+      .channel('farmer-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'farmers',
+          filter: `id=eq.${farmerId}`
+        },
+        (payload) => {
+          const newIsPremium = payload.new?.is_premium ?? false;
+          setIsPremium(newIsPremium);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [farmerId]);
 
   const handleLogout = async () => {
