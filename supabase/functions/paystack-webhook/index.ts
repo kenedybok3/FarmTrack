@@ -73,7 +73,9 @@ serve(async (req) => {
     })
   }
 
-  const { data, metadata } = eventData.data
+  const eventDataData = eventData?.data ?? {}
+  const { data: payloadData = {}, metadata } = eventDataData
+
   if (!metadata || !metadata.userId) {
     return new Response(JSON.stringify({ error: "Missing userId in metadata" }), {
       status: 400,
@@ -82,7 +84,7 @@ serve(async (req) => {
   }
 
   const userId = metadata.userId as string
-  const customerEmail = data.customer?.email
+  const customerEmail = payloadData.customer?.email ?? payloadData.customer?.customer_email ?? null
 
   // Verify that the customer email matches the user's email in the database
   const { data: farmerData, error: farmerError } = await supabase
