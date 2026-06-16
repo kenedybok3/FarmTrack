@@ -16,7 +16,7 @@ function formatRecordsForAI(records: DailyRecord[]): string {
   if (records.length === 0) return 'No historical data available yet.'
   
   return records.slice(0, 10).map(record => 
-    `Date: ${record.record_date}, Feed: ${record.feed_bags_used} bags (₦${record.feed_cost}), Loss: ${record.mortality_count}, Eggs: ${record.production_amt}, Sales: ₦${record.sales_amount}`
+    `Date: ${record.record_date}, Feed: ${record.feed_bags_used} bags (₦${record.feed_cost}), Loss: ${record.mortality_count}, Eggs: ${record.production_amt}, Sales: ₦${(record.egg_sales_amount || 0) + (record.bird_sales_amount || 0) + (record.manure_sales_amount || 0)}`
   ).join('\n')
 }
 

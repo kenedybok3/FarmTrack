@@ -30,11 +30,18 @@ create table if not exists public.daily_records (
   feed_cost numeric default 0,
   mortality_count numeric default 0,
   production_amt numeric default 0,
+  egg_sales_amount numeric default 0,
+  bird_sales_amount numeric default 0,
+  manure_sales_amount numeric default 0,
   sales_amount numeric default 0,
   notes text,
   record_date date not null,
   created_at timestamptz not null default now()
 );
+
+alter table public.daily_records add column if not exists egg_sales_amount numeric default 0;
+alter table public.daily_records add column if not exists bird_sales_amount numeric default 0;
+alter table public.daily_records add column if not exists manure_sales_amount numeric default 0;
 
 -- Health Logs table
 create table if not exists public.health_logs (

@@ -17,6 +17,9 @@ export interface DailyRecord {
   mortality_count: number;
   production_amt: number;
   sales_amount: number;
+  egg_sales_amount?: number;
+  bird_sales_amount?: number;
+  manure_sales_amount?: number;
   notes?: string;
   record_date: string;
   created_at: string;
@@ -87,7 +90,10 @@ export interface DailyRecordInput {
   feed_cost: number;
   mortality_count: number;
   production_amt: number;
-  sales_amount: number;
+  egg_sales_amount: number;
+  bird_sales_amount: number;
+  manure_sales_amount: number;
+  sales_amount?: number;
   notes?: string;
   record_date: string;
 }

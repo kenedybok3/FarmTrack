@@ -11,12 +11,20 @@ interface DailyLogFormProps {
   loading?: boolean
 }
 
+const parseSalesAmount = (value: string) => {
+  const amount = parseFloat(value)
+  return Number.isFinite(amount) ? amount : 0
+}
+
 export function DailyLogForm({ onSubmit, loading = false }: DailyLogFormProps) {
   const [feedBags, setFeedBags] = useState('')
   const [feedCost, setFeedCost] = useState('')
   const [mortality, setMortality] = useState('')
   const [production, setProduction] = useState('')
-  const [sales, setSales] = useState('')
+  const [eggSales, setEggSales] = useState('')
+  const [birdSales, setBirdSales] = useState('')
+  const [manureSales, setManureSales] = useState('')
+  const [showOtherSales, setShowOtherSales] = useState(false)
   const [notes, setNotes] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,35 +32,40 @@ export function DailyLogForm({ onSubmit, loading = false }: DailyLogFormProps) {
     e.stopPropagation()
 
     const record = {
-      feed_bags_used: Number(feedBags) || 0,
-      feed_cost: Number(feedCost) || 0,
-      mortality_count: Number(mortality) || 0,
-      production_amt: Number(production) || 0,
-      sales_amount: Number(sales) || 0,
+      feed_bags_used: parseFloat(feedBags) || 0,
+      feed_cost: parseFloat(feedCost) || 0,
+      mortality_count: parseInt(mortality, 10) || 0,
+      production_amt: parseInt(production, 10) || 0,
+      egg_sales_amount: parseFloat(eggSales) || 0,
+      bird_sales_amount: parseFloat(birdSales) || 0,
+      manure_sales_amount: parseFloat(manureSales) || 0,
       notes: notes || undefined,
       record_date: new Date().toISOString().split('T')[0]
     }
 
-    const result = await onSubmit(record as any)
+    const result = await onSubmit(record)
 
     if (result.success) {
       setFeedBags('')
       setFeedCost('')
       setMortality('')
       setProduction('')
-      setSales('')
+      setEggSales('')
+      setBirdSales('')
+      setManureSales('')
+      setShowOtherSales(false)
       setNotes('')
-      toast.success('Daily record saved successfully!')
     } else {
       toast.error(result.error || 'Failed to save record')
     }
   }
 
-return (
-     <form onSubmit={handleSubmit} className="space-y-4">
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
        <div className="grid grid-cols-2 gap-4">
         <Input
           type="number"
+          inputMode="decimal"
           step="0.1"
           placeholder="0.0"
           label="Feed (Bags)"
@@ -61,6 +74,7 @@ return (
         />
         <Input
           type="number"
+          inputMode="decimal"
           placeholder="0"
           label="Feed Cost (₦)"
           value={feedCost}
@@ -68,6 +82,7 @@ return (
         />
         <Input
           type="number"
+          inputMode="decimal"
           placeholder="0"
           label="Loss (Birds)"
           value={mortality}
@@ -75,6 +90,7 @@ return (
         />
         <Input
           type="number"
+          inputMode="decimal"
           placeholder="0"
           label="Harvest (Crates)"
           value={production}
@@ -82,13 +98,45 @@ return (
         />
       </div>
 
-      <Input
-        type="number"
-        placeholder="0"
-        label="Sales (₦)"
-        value={sales}
-        onChange={(e) => setSales(e.target.value)}
-      />
+      <div className="space-y-3">
+        <Input
+          type="number"
+          inputMode="decimal"
+          placeholder="0"
+          label="Egg Sales (₦)"
+          value={eggSales}
+          onChange={(e) => setEggSales(e.target.value)}
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowOtherSales((current) => !current)}
+          className="w-full text-left text-xs font-semibold text-emerald-400 hover:text-emerald-300 active:scale-[0.99] transition-all duration-200"
+        >
+          {showOtherSales ? '— Hide other sales fields' : '+ Add bird or manure sales'}
+        </button>
+
+        {showOtherSales && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl bg-slate-800/25 border border-slate-700/40 p-4">
+            <Input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              label="Bird Sales (₦)"
+              value={birdSales}
+              onChange={(e) => setBirdSales(e.target.value)}
+            />
+            <Input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              label="Manure Sales (₦)"
+              value={manureSales}
+              onChange={(e) => setManureSales(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
 
       <div>
         <label className="text-[10px] text-gray-500 font-bold uppercase mb-1 block">

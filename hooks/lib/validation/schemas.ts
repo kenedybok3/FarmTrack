@@ -25,7 +25,10 @@ export const dailyRecordSchema = z.object({
   feed_cost: z.number().min(0).default(0),
   mortality_count: z.number().int().min(0).default(0),
   production_amt: z.number().min(0).default(0),
-  sales_amount: z.number().min(0).default(0),
+  egg_sales_amount: z.number().min(0).default(0),
+  bird_sales_amount: z.number().min(0).default(0),
+  manure_sales_amount: z.number().min(0).default(0),
+  sales_amount: z.number().min(0).optional(),
   notes: z.string().optional(),
   record_date: z.string()
 })

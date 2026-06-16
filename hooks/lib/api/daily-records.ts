@@ -7,9 +7,12 @@ export async function createDailyRecord(record: DailyRecordInput, signal?: Abort
      .insert([record])
      .select()
      .single()
-  
-
-   if (error) throw error
+ 
+ 
+   if (error) {
+     console.error("CRITICAL SUPABASE SUBMISSION ERROR:", error);
+     throw error
+   }
    return data as DailyRecord
  }
 
@@ -39,32 +42,38 @@ export async function getLatestDailyRecord(farmerId: string) {
 }
 
 export async function updateDailyRecord(id: string, updates: Partial<DailyRecordInput>, farmerId: string) {
-  const { data, error } = await supabase
-    .from('daily_records')
-    .update(updates)
-    .eq('id', id)
-    .eq('farmer_id', farmerId)
-    .select()
-    .single()
+   const { data, error } = await supabase
+     .from('daily_records')
+     .update(updates)
+     .eq('id', id)
+     .eq('farmer_id', farmerId)
+     .select()
+     .single()
 
-  if (error) throw error
-  return data as DailyRecord
-}
+   if (error) {
+     console.error("CRITICAL SUPABASE UPDATE ERROR:", error);
+     throw error
+   }
+   return data as DailyRecord
+ }
 
 export async function deleteDailyRecord(id: string, signal?: AbortSignal) {
-    const { error } = await supabase
-      .from('daily_records')
-      .delete()
-      .eq('id', id)
-      .abortSignal(signal ?? new AbortController().signal)
+     const { error } = await supabase
+       .from('daily_records')
+       .delete()
+       .eq('id', id)
+       .abortSignal(signal ?? new AbortController().signal)
 
-    if (error) throw error
-  }
+     if (error) {
+       console.error("CRITICAL SUPABASE DELETE ERROR:", error);
+       throw error
+     }
+   }
 
 export async function getFarmStats(farmerId: string): Promise<FarmStats> {
   const records = await getDailyRecords(farmerId, 100)
   
-  const totalSales = records.reduce((sum, r) => sum + (r.sales_amount || 0), 0)
+  const totalSales = records.reduce((sum, r) => sum + (r.egg_sales_amount || 0) + (r.bird_sales_amount || 0) + (r.manure_sales_amount || 0), 0)
   const totalMortality = records.reduce((sum, r) => sum + (r.mortality_count || 0), 0)
   const totalProduction = records.reduce((sum, r) => sum + (r.production_amt || 0), 0)
   const totalFeedCost = records.reduce((sum, r) => sum + (r.feed_cost || 0), 0)
