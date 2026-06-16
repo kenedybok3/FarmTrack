@@ -7,6 +7,7 @@ export interface Farmer {
   bird_types?: string[];
   created_at: string;
   updated_at?: string;
+  is_premium?: boolean;
 }
 
 export interface DailyRecord {
